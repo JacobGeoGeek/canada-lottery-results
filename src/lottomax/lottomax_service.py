@@ -57,7 +57,7 @@ def find_lotto_result(date: datetime.date) -> PrizeBreakdown:
 
 
 def find_lotto_result_by_date_and_region(
-    date: datetime.date, 
+    date: datetime.date,
     region: Region) -> list[NumbersMatched]:
     """Return the lotto result from specific date and region"""
 
@@ -68,7 +68,6 @@ def find_lotto_result_by_date_and_region(
         class_=region_class).tbody.find_all("tr")
 
     return _get_numbers_matched(table_content)
-
 
 def _get_result_page_by_date(date: datetime.date) -> ResultSet:
     """Return the result website within a specific date"""
@@ -113,7 +112,7 @@ def _get_class_by_region(region: Region) -> str:
         return "quecbecBox"
 
     if region is Region.WESTERN_CANADA:
-        return "westernBox" 
+        return "westernBox"
 
 def _get_total_prize_fund(numbers_matched: list[NumbersMatched]) -> float:
     numbers_with_prize_fund: Final[list[NumbersMatched]] = list(
@@ -126,6 +125,9 @@ def _get_total_prize_fund(numbers_matched: list[NumbersMatched]) -> float:
 
 def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[NumbersMatched]:
     results: Final[list[NumbersMatched]] = []
+
+    if not numbers_matched_table:
+        return results
 
     numbers_matched_table.pop()
 
