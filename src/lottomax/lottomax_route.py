@@ -1,6 +1,6 @@
 import datetime
 from typing import Final
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, status
 
 from .models.region import Region
 
@@ -8,7 +8,8 @@ from .entities.numbers_matched import NumbersMatched
 from .entities.prize_breakdown import PrizeBreakdown
 from .entities.numbers import Numbers
 
-from .lottomax_service import find_all_years, find_lotto_numbers_by_year, find_lotto_result, find_lotto_result_by_date_and_region
+from .lottomax_service import find_all_years, find_lotto_numbers_by_year, find_lotto_result
+from .lottomax_service import find_lotto_result_by_date_and_region
 
 router = APIRouter(
     prefix="/lottomax",
@@ -44,13 +45,15 @@ async def get_lottomax_result_by_date(
     """Get the winning numbers and prisze payouts for a specific date"""
     return find_lotto_result(date)
 
-@router.get("results/{date}/regions/{region}", response_model=list[NumbersMatched])
+@router.get("results/{date}/regions/{region}",
+response_model=list[NumbersMatched],
+status_code=status.HTTP_200_OK
+)
 async def get_lottomax_result_by_date_and_location(
     date: datetime.date = Path(...,
         title="The date"
     ),
     region: Region = Path(..., title="The region")
     ):
-    """Get the winning numbers and prisze payouts for a specific date and  Region"""
+    """Get the winning numbers and prisze payouts for a specific date and Region"""
     return find_lotto_result_by_date_and_region(date, region)
-
