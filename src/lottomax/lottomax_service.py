@@ -109,7 +109,7 @@ def _get_class_by_region(region: Region) -> str:
         return "ontarioBox"
 
     if region is Region.QUEBEC:
-        return "quecbecBox"
+        return "quebecBox"
 
     if region is Region.WESTERN_CANADA:
         return "westernBox"
@@ -138,7 +138,7 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
         prize_per_winner: Final[str] = td_content[1].text.strip().replace(",", "").replace("$", "")
 
         winner: Final[Winner] = _get_winner_results(td_content[2])
-        prize_fund: str | None = td_content[3].text.strip()
+        prize_fund: str or None = td_content[3].text.strip()
 
         if prize_fund == "-":
             prize_fund = None
