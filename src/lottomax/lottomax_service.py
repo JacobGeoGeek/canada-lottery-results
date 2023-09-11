@@ -137,7 +137,7 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
         match: Final[str] = td_content[0].strong.text
         prize_per_winner: Final[str] = td_content[1].text.strip().replace(",", "").replace("$", "")
 
-        winner: Final[Winner] = _get_winner_results(td_content[2])
+        total_winners: Final[int] = _get_number_winners(td_content[2])
         prize_fund: str or None = td_content[3].text.strip()
 
         if prize_fund == "-":
@@ -145,13 +145,13 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
         else:
             prize_fund = prize_fund.replace(",", "")[1:]
 
-        results.append(NumbersMatched(
-            match=match, prize_per_winner=prize_per_winner, winner=winner, prize_fund=prize_fund
-            ))
+        number_matched: Final[NumbersMatched] = NumbersMatched(match=match, prize_per_winner=prize_per_winner, total_winners=total_winners, prize_fund=prize_fund)
+
+        results.append(number_matched)
 
     return results
 
-def _get_winner_results(td_content: ResultSet) -> Winner:
+def _get_number_winners(td_content: ResultSet) -> int:
     total: int = 0
     location: list[Location] = []
 
@@ -172,7 +172,7 @@ def _get_winner_results(td_content: ResultSet) -> Winner:
     else:
         total= int(td_content.text.strip().replace(",", ""))
 
-    return Winner(total=total, location=location)
+    return total
 
 def _get_winner_location(region: list[str]) -> Location:
     return Location(region=region[0], total=region[1].replace(",", ""))
