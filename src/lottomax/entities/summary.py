@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from humps import camelize
+
 
 
 class Summary(BaseModel):
@@ -13,5 +13,4 @@ class Summary(BaseModel):
 
     class Config:
         """Config to convert snake_case to camelCase for JSON response Payload"""
-        alias_generator = camelize
         allow_population_by_field_name = True

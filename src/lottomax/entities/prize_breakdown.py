@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from humps import camelize
 
 from .numbers_matched import NumbersMatched
 from .summary import Summary
@@ -11,5 +10,4 @@ class PrizeBreakdown(BaseModel):
 
     class Config:
         """Config to convert snake_case to camelCase for JSON response Payload"""
-        alias_generator = camelize
         allow_population_by_field_name = True
