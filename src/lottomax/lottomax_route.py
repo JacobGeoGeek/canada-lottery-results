@@ -42,7 +42,7 @@ async def get_lottomax_result_by_date(
     date: datetime.date = Path(
         title="The date to view the winning numbers and prize payouts that took place"
     )):
-    """Get the winning numbers and prisze payouts for a specific date"""
+    """Get the winning numbers and prise payouts for a specific date"""
     return find_lotto_result(date)
 
 @router.get("/results/{date}/regions/{region}",
