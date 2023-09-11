@@ -9,7 +9,6 @@ from .models.region import Region
 
 from .entities.prize_breakdown import PrizeBreakdown
 from .entities.location import Location
-from .entities.winner import Winner
 from .entities.numbers_matched import NumbersMatched
 from .entities.summary import Summary
 from .entities.numbers import Numbers
