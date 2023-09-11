@@ -1,4 +1,5 @@
 """"main.py"""
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .lottomax import lottomax_route
@@ -15,3 +16,6 @@ app.add_middleware(
 )
 
 app.include_router(lottomax_route.router)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
