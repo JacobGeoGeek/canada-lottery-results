@@ -2,10 +2,16 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .lottomax import lottomax_route
+from lottomax import lottomax_route
+from config.configuration import configuration
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Canada lottery API",
+    description="API for Canada lottery results",
+    version="0.0.1",
+    root_path=configuration.root_path,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,4 +29,4 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app="main:app", host=configuration.host, port=configuration.port, reload=configuration.environnement == "DEV")
