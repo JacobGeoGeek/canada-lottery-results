@@ -5,15 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: FastAPI",
+            "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "src.main:app",
-                "--reload"
-            ],
-            "jinja": true,
+            "program": "${workspaceFolder}/src/main.py", 
+            "console": "integratedTerminal",
             "justMyCode": true
         }
     ]
