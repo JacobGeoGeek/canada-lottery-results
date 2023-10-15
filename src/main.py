@@ -1,9 +1,10 @@
 """"main.py"""
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from lottomax import lottomax_route
-from config.configuration import configuration
+from config.configuration import configuration, Environnement
+from security.security_service import validate_rapidapi_proxy_secret
 
 
 app = FastAPI(
@@ -11,6 +12,7 @@ app = FastAPI(
     description="API for Canada lottery results",
     version="0.0.1",
     root_path=configuration.root_path,
+    dependencies=[Depends(validate_rapidapi_proxy_secret)],
 )
 
 app.add_middleware(
@@ -29,4 +31,4 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app="main:app", host=configuration.host, port=configuration.port, reload=configuration.environnement == "DEV")
+    uvicorn.run(app="main:app", host=configuration.host, port=configuration.port, reload=configuration.environnement == Environnement.DEV)

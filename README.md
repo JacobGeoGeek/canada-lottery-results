@@ -14,6 +14,13 @@ After installing Python, you must
 * Start the api via uvicorn command: `uvicorn src.main:app`.
 
 
+## Environnement variables
+* **ENVIRONNEMENT**: PROD or DEV. defeaut is `DEV`.
+* **ROOT_PATH**: When the API is served via a proxy, the variable will add an extra path prefix that is not seen by your application. For more information: [Behind a Proxy](https://fastapi.tiangolo.com/advanced/behind-a-proxy/?h=proxy). Default is `""`
+* **PORT**: Specify the port that the API is running. Default is `8080`.
+* **HOST**: The IP adresse that the API is running. Default is `0.0.0.0`
+* **RAPIDAPI_PROXY_SECRET**: The variable is used for production only. Its value from the RapidAPI platform that checks if the incoming requests come from the RapidAPI only. Default is `""`.
+
 ## Stack
 This project use the following librares:
 * [FastAPI](https://fastapi.tiangolo.com/)
