@@ -23,7 +23,7 @@ _LOTTOMAX_START_YEAR: Final[int] = min(_LOTTOMAX_YEARS)
 _LOTTOMAX_LAST_YEAR: Final[int] = max(_LOTTOMAX_YEARS)
 
 @router.get("/years", response_model=list[int])
-async def get_lotto_years() -> list[int]:
+async def get_lotto_max_years() -> list[int]:
     """Get all years from lotto max"""
     return _LOTTOMAX_YEARS
 
