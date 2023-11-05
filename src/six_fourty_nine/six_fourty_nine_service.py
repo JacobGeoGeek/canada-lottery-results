@@ -89,8 +89,8 @@ def _get_classic_result(tr) -> Classic:
     bonus: Final[int] = int(tr.find("li", class_="bonus-ball").text)
 
     td_tags = tr.find_all("td")
-    price: Final[float] = _format_price_value(td_tags[-1].text) if len(td_tags) == 3 else None
-    return Classic(numbers=numbers, bonus=bonus, price=price)
+    prize: Final[float] = _format_prize_value(td_tags[-1].text) if len(td_tags) == 3 else None
+    return Classic(numbers=numbers, bonus=bonus, prize=prize)
 
 def _get_guaranteed_result(raffle_results: ResultSet, table_breakdown: ResultSet) -> Guaranteed | None:
     """Return the 6/49 guaranteed result"""
@@ -112,9 +112,9 @@ def _get_guaranteed_result(raffle_results: ResultSet, table_breakdown: ResultSet
 
     tr_tags = table_breakdown.find_all("tr")
     last_row = tr_tags[-2]
-    price: Final[float] = _format_price_value(last_row.find_all("td")[1].text)
+    prize: Final[float] = _format_prize_value(last_row.find_all("td")[1].text)
     
-    return Guaranteed(number=draw_number, price=price)
+    return Guaranteed(number=draw_number, prize=prize)
 
 
 def _get_gold_ball_result(raffle_results: ResultSet, table_breakdown: ResultSet) -> GoldBall | None:
@@ -137,16 +137,16 @@ def _get_gold_ball_result(raffle_results: ResultSet, table_breakdown: ResultSet)
 
     tr_tags = table_breakdown.find_all("tr")
     last_row = tr_tags[-2]
-    price: Final[float] = _format_price_value(last_row.find_all("td")[1].text)
+    prize: Final[float] = _format_prize_value(last_row.find_all("td")[1].text)
 
-    return GoldBall(number=draw_number, price=price)
+    return GoldBall(number=draw_number, prize=prize)
 
 
-def _format_price_value(price: str) -> float | None:
-    """Return the price value"""
-    price = re.sub("[^\d\.]", "", price.strip().replace(",", "").replace("\n", "").replace("\r", "").replace("\t", ""))
+def _format_prize_value(prize: str) -> float | None:
+    """Return the prize value"""
+    prize = re.sub("[^\d\.]", "", prize.strip().replace(",", "").replace("\n", "").replace("\r", "").replace("\t", ""))
 
-    if len(price) == 0:
+    if len(prize) == 0:
         return None
 
-    return float(price)
+    return float(prize)
