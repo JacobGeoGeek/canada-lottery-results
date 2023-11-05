@@ -1,7 +1,4 @@
-
-
 from pydantic import BaseModel, Field
-
 
 class Classic(BaseModel):
     """Model represent classic numbers results for 6/49"""
