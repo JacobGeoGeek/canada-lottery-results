@@ -10,10 +10,8 @@ from .entities.classic import Classic
 from .entities.guaranteed import Guaranteed
 from .entities.gold_ball import GoldBall
 
-
 _6_49_BASE_URL: Final[str] = "https://www.lottonumbers.com"
 _6_49_PAGE: Final[str] = "/canada-6-49"
-
 
 def fing_all_years() -> list[int]:
     """Return all lotto 6/49 years played"""
@@ -54,9 +52,6 @@ def find_649_results_by_year(year: int) -> list[Result]:
     
     return results
 
-
-
-
 def _get_6_49_years() -> list[int]:
     """Return all lotto 6/49 years played"""
     six_foyrty_nine_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}")
@@ -81,7 +76,6 @@ def _get_6_49_years() -> list[int]:
             years.append(year)
 
     return years
-
 
 def _get_classic_result(tr) -> Classic:
     """Return the 6/49 classic result"""
@@ -140,7 +134,6 @@ def _get_gold_ball_result(raffle_results: ResultSet, table_breakdown: ResultSet)
     prize: Final[float] = _format_prize_value(last_row.find_all("td")[1].text)
 
     return GoldBall(number=draw_number, prize=prize)
-
 
 def _format_prize_value(prize: str) -> float | None:
     """Return the prize value"""
