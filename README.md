@@ -11,7 +11,7 @@ After installing Python, you must
 * Change the directory to canada-lottery-results `cd canada-lottery-results`
 * Create a virtual environnement (e.g: `python -m venv \path\to\virtual\environnement`).
 * Install the dependecies via the pip command: `pip install -r requirements.txt`.
-* Start the api via uvicorn command: `uvicorn src.main:app`.
+* Start the api by typing this command: `python WORK_FOLDER/src/main.py`.
 
 
 ## Environnement variables
