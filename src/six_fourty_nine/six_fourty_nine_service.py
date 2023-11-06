@@ -3,6 +3,7 @@ from typing import Final
 from bs4 import BeautifulSoup, ResultSet
 from fastapi import HTTPException
 import re
+import math
 from requests import Response, get
 
 from .entities.result import Result
@@ -133,7 +134,7 @@ def _get_gold_ball_result(raffle_results: ResultSet, table_breakdown: ResultSet)
     last_row = tr_tags[-2]
     prize: Final[float] = _format_prize_value(last_row.find_all("td")[1].text)
 
-    return GoldBall(number=draw_number, prize=prize)
+    return GoldBall(number=draw_number, prize=prize, isGoldBallDrawn=(not math.isclose(prize, 1_000_000.00)))
 
 def _format_prize_value(prize: str) -> float | None:
     """Return the prize value"""
