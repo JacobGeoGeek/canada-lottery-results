@@ -11,7 +11,3 @@ class Result(BaseModel):
     classic: Classic = Field(..., alias="classic")
     guaranteed: Guaranteed | None = Field(..., alias="guaranteed")
     gold_ball: GoldBall | None = Field(..., alias="goldBall")
-
-    
-
-
