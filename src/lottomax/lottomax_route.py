@@ -27,7 +27,7 @@ async def get_lotto_max_years() -> list[int]:
     """Get all years from lotto max"""
     return _LOTTOMAX_YEARS
 
-@router.get("/{year}", response_model=list[Numbers])
+@router.get("/years/{year}", response_model=list[Numbers])
 async def get_lottomax_result_by_year(
     year: int = Path(
         title="The year of lotto max results to get",
