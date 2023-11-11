@@ -6,6 +6,11 @@ import re
 import math
 from requests import Response, get
 
+from src.common.entities.numbers_matched import NumbersMatched
+
+from .entities.summary import Summary
+from .entities.prize_breakdown import PrizeBreakdown
+
 from .entities.result import Result
 from .entities.classic import Classic
 from .entities.guaranteed import Guaranteed
@@ -53,6 +58,25 @@ def find_649_results_by_year(year: int) -> list[Result]:
     
     return results
 
+def find_649_result_by_date(date: datetime.date) -> PrizeBreakdown:
+    """Return the 6/49 result within a specific date"""
+    date_result_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/results/{date.strftime('%Y-%m-%d')}")
+
+    if date_result_page.status_code != 200:
+        raise HTTPException(status_code=400, detail=f"The date {date} does not exist within the lotto 6/49 results")
+    
+    html_content: BeautifulSoup = BeautifulSoup(date_result_page.text, "html.parser")
+
+    table_breakdown_result: Final[ResultSet] = html_content.find("table", class_="table-breakdown")
+
+    if table_breakdown_result is None:
+        raise HTTPException(status_code=400, detail=f"The prize breakdown results for the date {date} is not available.")
+
+    tr_tags: Final[list[ResultSet]] = table_breakdown_result.tbody.find_all("tr")
+    tr_tags.pop(-1) # Remove the last row representing the total
+    
+    return _process_prize_breakdown_results(tr_tags)
+
 def _get_6_49_years() -> list[int]:
     """Return all lotto 6/49 years played"""
     six_foyrty_nine_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}")
@@ -78,7 +102,7 @@ def _get_6_49_years() -> list[int]:
 
     return years
 
-def _get_classic_result(tr) -> Classic:
+def _get_classic_result(tr: ResultSet) -> Classic:
     """Return the 6/49 classic result"""
     numbers: Final[list[int]] = list(map(lambda item: int(item.text), tr.find_all("li", class_="ball")))
     bonus: Final[int] = int(tr.find("li", class_="bonus-ball").text)
@@ -136,6 +160,41 @@ def _get_gold_ball_result(raffle_results: ResultSet, table_breakdown: ResultSet)
 
     return GoldBall(number=draw_number, prize=prize, isGoldBallDrawn=(not math.isclose(prize, 1_000_000.00)))
 
+def _process_prize_breakdown_results(tr_tags: list[ResultSet]) -> PrizeBreakdown:
+    """Return the numbers matched"""
+    free_play_ticket: Final[str] = "Free Play Ticket" 
+    match_two: Final[str] = "Match 2"
+
+    numbers_matched: Final[list[NumbersMatched]] = []
+
+    total_winners: int = 0
+    total_prize_fund: float = 0.0
+
+    for tr in tr_tags:
+        td_tags = tr.find_all("td")
+        match: str = _format_match(td_tags[0].text)
+        prize_per_winner: Final[float | str] = free_play_ticket if match == match_two else _format_prize_value(td_tags[1].text.strip())
+        winners: Final[int] = _format_total_winners(td_tags[2].text)
+        prize_fund: Final[float | None] = None if match == match_two else _format_prize_value(td_tags[3].text.strip())
+
+        total_winners += winners
+
+        if prize_fund is not None:
+            total_prize_fund += prize_fund
+
+        numbers_matched.append(NumbersMatched(match=match, prize_per_winner=prize_per_winner, total_winners=winners, prize_fund=prize_fund))
+    
+    return PrizeBreakdown(summary=Summary(total_winners=total_winners, total_prize_fund=total_prize_fund), numbers_matched=numbers_matched)
+
+
+def _format_match(match: str) -> str:
+    """Return the match"""
+    return match.strip().replace("\n", "").replace("\r", "").replace("\t", "")
+
+def _format_total_winners(total_winners: str) -> int:
+    """Return the total winners"""
+    return int(re.sub("[^\d]", "", total_winners.strip().replace(",", "")))
+
 def _format_prize_value(prize: str) -> float | None:
     """Return the prize value"""
     prize = re.sub("[^\d\.]", "", prize.strip().replace(",", "").replace("\n", "").replace("\r", "").replace("\t", ""))
@@ -144,3 +203,4 @@ def _format_prize_value(prize: str) -> float | None:
         return None
 
     return float(prize)
+
