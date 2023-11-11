@@ -1,7 +1,5 @@
 from pydantic import BaseModel, Field
-
-
-
+ 
 class Summary(BaseModel):
     """General information on a lotto max result"""
     ticket_sold: int | None = Field(alias="ticketSold")

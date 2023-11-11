@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from .numbers_matched import NumbersMatched
+from src.common.entities.numbers_matched import NumbersMatched
 from .summary import Summary
 
 class PrizeBreakdown(BaseModel):

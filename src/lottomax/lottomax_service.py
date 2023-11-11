@@ -9,7 +9,7 @@ from .models.region import Region
 
 from .entities.prize_breakdown import PrizeBreakdown
 from .entities.location import Location
-from .entities.numbers_matched import NumbersMatched
+from src.common.entities.numbers_matched import NumbersMatched
 from .entities.summary import Summary
 from .entities.numbers import Numbers
 
@@ -123,6 +123,9 @@ def _get_total_prize_fund(numbers_matched: list[NumbersMatched]) -> float:
     return round(sum(map(lambda x: x.prize_fund, numbers_with_prize_fund)), 2)
 
 def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[NumbersMatched]:
+    match_three: Final[str] = "Match 3"
+    free_play_ticket: Final[str] = "Free Play Ticket"
+
     results: Final[list[NumbersMatched]] = []
 
     if not numbers_matched_table:
@@ -134,10 +137,10 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
 
     for td_content in tds:
         match: Final[str] = td_content[0].strong.text
-        prize_per_winner: Final[str] = td_content[1].text.strip().replace(",", "").replace("$", "")
-
+        prize_per_winner: Final[str | float] = free_play_ticket if match == match_three else float(td_content[1].text.strip().replace(",", "").replace("$", "")) 
         total_winners: Final[int] = _get_number_winners(td_content[2])
-        prize_fund: str or None = td_content[3].text.strip()
+        
+        prize_fund: str | None = td_content[3].text.strip()
 
         if prize_fund == "-":
             prize_fund = None

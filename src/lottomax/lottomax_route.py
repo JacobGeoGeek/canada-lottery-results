@@ -4,7 +4,7 @@ from fastapi import APIRouter, Path, status
 
 from .models.region import Region
 
-from .entities.numbers_matched import NumbersMatched
+from src.common.entities.numbers_matched import NumbersMatched
 from .entities.prize_breakdown import PrizeBreakdown
 from .entities.numbers import Numbers
 
