@@ -10,7 +10,9 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/main.py", 
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "env": {"PYTHONPATH": "${workspaceFolder}"}
         }
     ]
 }
