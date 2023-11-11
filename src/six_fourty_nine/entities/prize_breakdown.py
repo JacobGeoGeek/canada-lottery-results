@@ -1,10 +1,11 @@
+
 from pydantic import BaseModel, Field
 
 from src.common.entities.numbers_matched import NumbersMatched
 from .summary import Summary
 
 class PrizeBreakdown(BaseModel):
-    """Model represent prize statistic"""
+    """Model represent prize statistic for 6/49 draw"""
     summary: Summary = Field(..., alias="summary")
     numbers_matched: list[NumbersMatched] = Field(..., alias="numbersMatched")
 
