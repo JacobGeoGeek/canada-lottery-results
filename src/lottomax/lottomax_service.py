@@ -141,11 +141,7 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
         total_winners: Final[int] = _get_number_winners(td_content[2])
         
         prize_fund: str | None = td_content[3].text.strip()
-
-        if prize_fund == "-":
-            prize_fund = None
-        else:
-            prize_fund = prize_fund.replace(",", "")[1:]
+        prize_fund = None if prize_fund == "-" else prize_fund.replace(",", "")[1:]
 
         number_matched: Final[NumbersMatched] = NumbersMatched(match=match, prize_per_winner=prize_per_winner, total_winners=total_winners, prize_fund=prize_fund)
 
