@@ -4,7 +4,7 @@
 The Canada Lottery API is a code base that scrapes the lottery results from external websites and sends the data into JSON.
 
 ## Requirements
-To use this API Project, you will need to install Python version 3.10 or later.
+To use this API Project, you will need to install Python version 3.12 or later.
 
 ## Setup
 After installing Python, you must
