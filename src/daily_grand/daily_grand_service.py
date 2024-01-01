@@ -119,9 +119,8 @@ def _build_main_breakdown(main_breakdown: list[dict]) -> DetailBreakDown:
     return DetailBreakDown(summary=Summary(totalWinners=summary_total_winners, totalPrizeFund=summary_total_prize_fund), numbersMatched=numbers_matched)
 
 def _build_bonus_breakdown(bonus_breakdown: list[dict]) -> DetailBreakDown | None:
-    print(bonus_breakdown)
+    """Return the detail breakdown for the bonus draw"""
     if len(bonus_breakdown) == 0:
-        print("No bonus breakdown")
         return None
     
     numbers_matched: Final[list[NumbersMatched]] = []
