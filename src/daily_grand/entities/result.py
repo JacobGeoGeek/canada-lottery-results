@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 
 from .bonus_draw import BonusDraw
 
-
 class Result(BaseModel):
     """Model represent numbers results for Daily Grand"""
     date: datetime.date = Field(..., alias="date")

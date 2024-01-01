@@ -1,10 +1,7 @@
-
-
 from pydantic import BaseModel, Field
 
 from src.common.entities.numbers_matched import NumbersMatched
 from src.common.entities.summary import Summary
-
 
 class DetailBreakDown(BaseModel):
     """Model represent main breakdown for daily grand"""

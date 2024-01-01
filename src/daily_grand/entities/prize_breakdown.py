@@ -1,9 +1,6 @@
-
 from pydantic import BaseModel, Field
 
 from .detail_breakdown import DetailBreakDown
-
-
 
 class PrizeBreakdown(BaseModel):
     """Model represent prize breakdown for daily grand"""
