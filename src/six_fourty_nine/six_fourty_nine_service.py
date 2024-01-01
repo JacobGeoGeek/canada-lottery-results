@@ -7,8 +7,8 @@ import math
 from requests import Response, get
 
 from src.common.entities.numbers_matched import NumbersMatched
+from src.common.entities.summary import Summary
 
-from .entities.summary import Summary
 from .entities.prize_breakdown import PrizeBreakdown
 
 from .entities.result import Result
