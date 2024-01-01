@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from lottomax import lottomax_route
 from  six_fourty_nine import six_fourty_nine_route
+from daily_grand import daily_grand_route
 from config.configuration import configuration, Environnement
 from security.security_service import validate_rapidapi_proxy_secret
 
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(lottomax_route.router)
 app.include_router(six_fourty_nine_route.router)
+app.include_router(daily_grand_route.router)
 
 @app.get("/", summary="API version", include_in_schema=False)
 async def root():
