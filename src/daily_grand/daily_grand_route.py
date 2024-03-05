@@ -2,10 +2,10 @@ import datetime
 from typing import Final
 from fastapi import APIRouter, Path
 
-from .entities.prize_breakdown import PrizeBreakdown
+from .models.prize_breakdown import PrizeBreakdown
 
-from .entities.result import Result
-from .daily_grand_service import find_all_years, find_daily_grand_results_by_years, find_daily_grand_result_by_date
+from .models.result import Result
+from .daily_grand_service import find_all_years, find_daily_grand_results_by_year, find_daily_grand_result_by_date
 
 router = APIRouter(
     prefix="/daily-grand",
@@ -29,7 +29,7 @@ async def get_daily_grand_result_by_year(year: int = Path(
         le=_DAILY_GRAND_LAST_YEAR
 )):
     """Get the daily grand numbers result by year"""
-    return find_daily_grand_results_by_years(year)
+    return find_daily_grand_results_by_year(year)
 
 @router.get("/results/{date}", response_model=PrizeBreakdown)
 async def get_daily_grand_result_by_date(
