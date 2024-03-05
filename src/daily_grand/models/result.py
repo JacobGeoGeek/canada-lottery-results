@@ -7,6 +7,6 @@ class Result(BaseModel):
     """Model represent numbers results for Daily Grand"""
     date: datetime.date = Field(..., alias="date")
     numbers: list[int] = Field(..., alias="numbers")
-    grandNumber: int = Field(..., alias="grandNumber")
+    grand_number: int = Field(..., alias="grandNumber")
     prize: float = Field(..., alias="prize")
-    bonusesDraw: list[BonusDraw] = Field(..., alias="bonusesDraw")
+    bonuses_draw: list[BonusDraw] = Field(..., alias="bonusesDraw")

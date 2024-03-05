@@ -1,8 +1,8 @@
 
 from pydantic import BaseModel, Field
 
-from src.common.entities.numbers_matched import NumbersMatched
-from src.common.entities.summary import Summary
+from src.common.models.numbers_matched import NumbersMatched
+from src.common.models.summary import Summary
 
 class PrizeBreakdown(BaseModel):
     """Model represent prize statistic for 6/49 draw"""
