@@ -2,3 +2,7 @@ env/*
 __pycache__
 .python-version
 */.env
+src/config/.env
+.env
+celerybeat-schedule
+testing.ipynb
