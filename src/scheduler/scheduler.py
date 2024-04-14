@@ -19,7 +19,7 @@ class Scheduler:
       },
     }
 
-    self._app.conf.update(timezome='America/Toronto', enable_utc=True)
+    self._app.conf.update(timezome='America/Toronto', enable_utc=True, broker_connection_retry_on_startup=True)
 
   def get_celey_app(self) -> Celery:
     return self._app
