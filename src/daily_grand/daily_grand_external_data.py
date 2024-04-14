@@ -1,11 +1,9 @@
 import datetime
 from typing import Final
 from requests import get, Response
-from fastapi import HTTPException
 from zipfile import ZipFile
 from io import BytesIO
 from pandas import read_csv, DataFrame, to_datetime
-import swifter
 
 from src.common.models.numbers_matched import NumbersMatched
 from src.common.models.summary import Summary
@@ -29,7 +27,7 @@ def extract_all_years() -> list[int]:
     response: Response = get(f"{_DAILY_GRAND_BASE_URL}{_RESULT_FILE_PATH}")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"An error occured while fetching the years")
+        raise Exception(f"An error occured while fetching the years \n message: {response.text}")
     
     zip_file = ZipFile(BytesIO(response.content))
     csv_file: Final[DataFrame] = read_csv(zip_file.open(_FILE_NAME))
@@ -42,7 +40,7 @@ def extract_daily_grand_results_by_years(year: int) -> list[Result]:
     zip_file_response: Response = get(f"{_DAILY_GRAND_BASE_URL}{_RESULT_FILE_PATH}")
 
     if zip_file_response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"An error occured while fetching the results for the year {year}")
+        raise Exception(f"An error occured while fetching the results for the year {year} \n message: {zip_file_response.text}")
 
     zip_file = ZipFile(BytesIO(zip_file_response.content))
     csv_file: DataFrame = read_csv(zip_file.open(_FILE_NAME))
@@ -51,7 +49,7 @@ def extract_daily_grand_results_by_years(year: int) -> list[Result]:
     csv_file = csv_file[(csv_file["DRAW DATE"].dt.year == year) & (csv_file["PRIZE DIVISION"] == 0)]
     csv_file = csv_file.sort_values(by=["DRAW DATE"], ascending=False)
 
-    csv_file["JSON"] = csv_file.swifter.apply(lambda row: _build_result(row), axis=1)
+    csv_file["JSON"] = csv_file.apply(lambda row: _build_result(row), axis=1)
 
     return csv_file["JSON"].tolist()
 
@@ -60,13 +58,13 @@ def extract_daily_grand_result_by_date(date: datetime.date) -> PrizeBreakdown:
     detail_page: Response = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date.strftime(_DATE_FORMAT)}")
 
     if detail_page.status_code != 200:
-        raise HTTPException(status_code=400, detail=f"The date {date} does not exist within the daily grand results")
+        raise Exception(f"The date {date} does not exist within the daily grand results \n message: {detail_page.text}")
     
     game_breakdown: Final[list[dict]] = detail_page.json()["gameBreakdown"]
     main_breakdown: Final[DetailBreakDown] = _build_main_breakdown(list(filter(lambda breakdown: breakdown["prizeDiv"] != 20, game_breakdown)))
-    bonus_breakdown: Final[DetailBreakDown] = _build_bonus_breakdown(list(filter(lambda breakdown: breakdown["prizeDiv"] == 20, game_breakdown)))
+    bonus_breakdown: Final[DetailBreakDown | None] = _build_bonus_breakdown(list(filter(lambda breakdown: breakdown["prizeDiv"] == 20, game_breakdown)))
 
-    return PrizeBreakdown(main_breakdown=main_breakdown, bonuses_breakdown=bonus_breakdown)
+    return PrizeBreakdown(mainBreakdown=main_breakdown, bonusesBreakdown=bonus_breakdown)
 
 def _build_result(row) -> Result:
     """Return the grand price for the selected date"""
@@ -74,7 +72,7 @@ def _build_result(row) -> Result:
     result_page: Final[Response] = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date}")
 
     if result_page.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"An error occured while fetching the results for the date {date}")
+        raise Exception(f"An error occured while fetching the results for the date {date} \n message: {result_page.text}")
     
     result_payload: Final[dict] = result_page.json()
     
