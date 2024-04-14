@@ -11,5 +11,13 @@ class Configuration(BaseSettings):
     host: str = "0.0.0.0"
     rapidapi_proxy_secret: str = ""
     database_connection_string: str = ""
+    broker_url: str = "pyamqp://guest@localhost:5672//"
+    sender_email: str = ""
+    sender_password: str = ""
+    recipient_email: str = ""
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+
+    model_config: SettingsConfigDict = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 configuration: Configuration = Configuration()
