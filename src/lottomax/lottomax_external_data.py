@@ -1,7 +1,6 @@
-import requests
+from requests import get, Response
 from datetime import date, datetime
 from typing import Final
-from fastapi import HTTPException
 from bs4 import BeautifulSoup, ResultSet
 
 from .models.region import Region
@@ -23,15 +22,15 @@ def extract_lotto_numbers_by_year(year: int) -> list[Numbers]:
 
     results: ResultSet = _get_table_result_by_year(year)
 
-    return list(map(
-        lambda row: Numbers(
-            date=_format_date(row.a.text),
-            prize=row.find(class_="jackpot").text[1:].replace(",", ""),
+    if not results:
+        raise Exception(f"The year {year} is not found in the external data")
+
+    return list(map(lambda row: Numbers(
+            date=_format_date(row.a.text), 
+            prize=row.find(class_="jackpot").text[1:].replace(",", ""), 
             numbers=_get_numbers(row.find_all(class_="ball")),
             bonus=row.find(class_="bonus-ball").text
-        ),
-        results
-    ))
+        ), results))
 
 def extract_lotto_result(date: datetime.date) -> PrizeBreakdown:
     """return the lottomax result within a specific date"""
@@ -78,23 +77,18 @@ def _get_result_page_by_date(date: datetime.date) -> ResultSet:
         ))
 
     if date not in date_results:
-        raise HTTPException(
-            400,
-            f"The date {date} does not exist within the lotto max past result"
-        )
+      raise Exception(f"The date {date} is not found in the external data")
 
-    result_page: requests.Response = requests.get(
-        f"{_LOTTOMAX_BASE_URL}/numbers/lotto-max-result-{date.strftime('%m-%d-%Y')}"
-        ).text
-
-    return BeautifulSoup(result_page, "html.parser")
+    result_page: Response = get(f"{_LOTTOMAX_BASE_URL}/numbers/lotto-max-result-{date.strftime('%m-%d-%Y')}")
+    
+    if result_page.status_code != 200:
+        raise Exception(f"The date {date} is not found in the external data \n message: {result_page.text}")
+    
+    return BeautifulSoup(result_page.text, "html.parser")
 
 def _get_class_by_region(region: Region) -> str:
     if region not in Region:
-        raise HTTPException(
-            400,
-            f"The region {region} is invalid"
-        )
+        raise Exception(f"The region {region} is invalid")
 
     if region is Region.ATLANTIC:
         return "atlanticBox"
@@ -202,8 +196,12 @@ def _get_stats_summary(summary_contents: list[ResultSet], total_prize_fund: floa
     )
 
 def _get_table_result_by_year(year: int) -> ResultSet:
-    year_page: requests.Response = requests.get(f"{_LOTTOMAX_BASE_URL}/numbers/{year}").text
-    html_content = BeautifulSoup(year_page, "html.parser")
+    year_page: Response = get(f"{_LOTTOMAX_BASE_URL}/numbers/{year}")
+
+    if year_page.status_code != 200:
+        raise Exception(f"The year {year} is not found in the external data. \n message: {year_page.text}")
+
+    html_content = BeautifulSoup(year_page.text, "html.parser")
 
     result_rows: ResultSet = html_content.find_all("tr")
 
@@ -215,7 +213,7 @@ def _get_table_result_by_year(year: int) -> ResultSet:
 
 def _get_lottomax_years() -> list[int]:
     """Return all lotto max years"""
-    year_past_page: requests.Response = requests.get(
+    year_past_page: Response = get(
         f"{_LOTTOMAX_BASE_URL}/past-numbers").text
     html_content = BeautifulSoup(year_past_page, "html.parser")
 

@@ -3,12 +3,9 @@ from io import BytesIO
 from typing import Final
 from zipfile import ZipFile
 from bs4 import BeautifulSoup, ResultSet
-from fastapi import HTTPException
 import re
-import math
 from pandas import DataFrame, read_csv, to_datetime
 from requests import Response, get
-import swifter
 
 from src.common.models.numbers_matched import NumbersMatched
 from src.common.models.summary import Summary
@@ -43,8 +40,11 @@ def extract_649_results_by_year(year: int) -> list[Result]:
     zip_file_classic_response: Response = get(_6_49_CLASSIC_FILE_PATH_URL)
     zip_file_gp_response: Response = get(_6_49_GP_FILE_PATH_URL)
 
-    if zip_file_classic_response.status_code != 200 or zip_file_gp_response.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"An error occured while fetching the results for the year {year}")
+    if zip_file_classic_response.status_code != 200:
+        raise Exception(f"An error occured while fetching the classic results for the year {year}. \n message: {zip_file_classic_response.text}")
+    
+    if zip_file_gp_response.status_code != 200:
+        raise Exception(f"An error occured while fetching the guaranteed prize results for the year {year}. \n message: {zip_file_gp_response.text}")
     
     zip_file_classic = ZipFile(BytesIO(zip_file_classic_response.content))
     zip_file_gp = ZipFile(BytesIO(zip_file_gp_response.content))
@@ -66,22 +66,20 @@ def extract_649_results_by_year(year: int) -> list[Result]:
 
     return classic_data["RESULT"].tolist()
 
-def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown | None:
+def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown:
     """Return the 6/49 result within a specific date"""
     date_string: Final[str] = date.strftime(_DATE_FORMAT)
     date_result_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date_string}")
 
     if date_result_page.status_code != 200:
-        return None
-        # raise HTTPException(status_code=400, detail=f"The date {date_result_page} does not exist within the lotto 6/49 results")
+        raise Exception(f"An error occured while fetching the results for the date {date_string}. \n message: {date_result_page.text}")
     
     html_content: BeautifulSoup = BeautifulSoup(date_result_page.text, "html.parser")
 
     table_breakdown_result: Final[ResultSet] = html_content.find("table")
 
     if table_breakdown_result is None:
-        return None
-        # raise HTTPException(status_code=400, detail=f"The prize breakdown results for the date {date_string} is not available.")
+        raise Exception(f"The prize breakdown results for the date {date_string} is not available.")
 
     tr_tags: Final[list[ResultSet]] = table_breakdown_result.tbody.find_all("tr")
     
@@ -93,7 +91,7 @@ def _get_6_49_years() -> list[int]:
     six_foyrty_nine_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/past-numbers")
 
     if six_foyrty_nine_page.status_code != 200:
-        raise HTTPException(status_code=500, detail="Unable to fetch the years results")
+        raise Exception(f"Unable to fetch the years results.\n message: {six_foyrty_nine_page.text}")
 
     html_content: BeautifulSoup = BeautifulSoup(six_foyrty_nine_page.text, "html.parser")
 
@@ -110,7 +108,7 @@ def _get_6_49_years() -> list[int]:
 def _process_classic_results(csv_file_classic: DataFrame) -> DataFrame:
     number_columns: Final[list[str]] = ["NUMBER DRAWN 1", "NUMBER DRAWN 2", "NUMBER DRAWN 3", "NUMBER DRAWN 4", "NUMBER DRAWN 5", "NUMBER DRAWN 6"]
 
-    csv_file_classic[_PRIZE_WON_FIELD] = csv_file_classic.swifter.apply(lambda row: _get_classic_prize(row), axis=1)
+    csv_file_classic[_PRIZE_WON_FIELD] = csv_file_classic.apply(lambda row: _get_classic_prize(row), axis=1)
     csv_file_classic[_NUMBERS_FIELDS] = csv_file_classic[number_columns].values.tolist() 
     
     return csv_file_classic.loc[:, [_DRAW_DATE_FIELD, _PRIZE_WON_FIELD, _NUMBERS_FIELDS, _BONUS_NUMBER_FIELD]]
@@ -125,16 +123,16 @@ def _process_guaranteed_data(csv_file_gp: DataFrame) -> DataFrame:
 def _process_gold_baell_data(csv_file_gp: DataFrame) -> DataFrame:
     gold_ball_data: DataFrame = csv_file_gp[csv_file_gp[_BALL_DRAWN_FIELD] != "Not Applicable"]
     gold_ball_data.loc[:, [_IS_GOLD_BALL_DRAWN_FIELD]] = gold_ball_data[_BALL_DRAWN_FIELD] == "Gold"
-    
     return gold_ball_data.loc[:, [_DRAW_DATE_FIELD, _PRIZE_WON_FIELD, _NUMBER_DRAWN_FIELD, _IS_GOLD_BALL_DRAWN_FIELD]]
 
 def _get_classic_prize(row) -> float | None:
     """Return the 6/49 classic prize"""
-    date: Final[str] = row["DRAW DATE"].strftime(_DATE_FORMAT)
+    date: Final[str] = row[_DRAW_DATE_FIELD].strftime(_DATE_FORMAT)
+    
     result_page: Final[Response] = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date}")
 
     if result_page.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Unable to fetch the prize for the date {date}")
+        raise Exception(f"Unable to fetch the prize for the date {date}. \n message: {result_page.text}")
     
     html_content: BeautifulSoup = BeautifulSoup(result_page.text, "html.parser")
 
