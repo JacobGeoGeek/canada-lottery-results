@@ -91,5 +91,3 @@ def _build_guaranteed(guaranteed: Column) -> list[Guaranteed]:
         guaranteed_dict = loads(value)
         result.append(Guaranteed(**guaranteed_dict))
     return result
-
-

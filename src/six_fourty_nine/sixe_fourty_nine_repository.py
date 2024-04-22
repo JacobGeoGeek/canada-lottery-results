@@ -1,9 +1,7 @@
-
 import datetime
 from sqlalchemy import extract
 from src.database.database import database
 from .entities.six_fourty_nine_results import SixFourtyNineResults
-
 
 with database.get_db() as _database:
   def get_649_numbers_by_year(year: int) -> list[SixFourtyNineResults]:

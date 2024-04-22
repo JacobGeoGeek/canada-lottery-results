@@ -75,14 +75,12 @@ def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown:
         raise Exception(f"An error occured while fetching the results for the date {date_string}. \n message: {date_result_page.text}")
     
     html_content: BeautifulSoup = BeautifulSoup(date_result_page.text, "html.parser")
-
     table_breakdown_result: Final[ResultSet] = html_content.find("table")
 
     if table_breakdown_result is None:
         raise Exception(f"The prize breakdown results for the date {date_string} is not available.")
 
     tr_tags: Final[list[ResultSet]] = table_breakdown_result.tbody.find_all("tr")
-    
     
     return _process_prize_breakdown_results(tr_tags)
 
@@ -103,7 +101,6 @@ def _get_6_49_years() -> list[int]:
         years.append(int(year.find("a").text))
 
     return years
-
 
 def _process_classic_results(csv_file_classic: DataFrame) -> DataFrame:
     number_columns: Final[list[str]] = ["NUMBER DRAWN 1", "NUMBER DRAWN 2", "NUMBER DRAWN 3", "NUMBER DRAWN 4", "NUMBER DRAWN 5", "NUMBER DRAWN 6"]
@@ -128,14 +125,12 @@ def _process_gold_baell_data(csv_file_gp: DataFrame) -> DataFrame:
 def _get_classic_prize(row) -> float | None:
     """Return the 6/49 classic prize"""
     date: Final[str] = row[_DRAW_DATE_FIELD].strftime(_DATE_FORMAT)
-    
     result_page: Final[Response] = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date}")
 
     if result_page.status_code != 200:
         raise Exception(f"Unable to fetch the prize for the date {date}. \n message: {result_page.text}")
     
     html_content: BeautifulSoup = BeautifulSoup(result_page.text, "html.parser")
-
     table_body: Final[ResultSet] = html_content.find("tbody")
 
     if table_body is None:
@@ -145,7 +140,6 @@ def _get_classic_prize(row) -> float | None:
     price: Final[str] = tr_tags[0].find("td", {"data-title": "Prize"}).text.strip().replace("$", "").replace(",", "")
 
     return float(price)
-
 
 def _build_result(row, gold_ball_data: DataFrame, guaranteed_data: DataFrame) -> Result:
     """Return the 6/49 result"""
