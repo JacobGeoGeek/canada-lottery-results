@@ -4,12 +4,11 @@ from fastapi import APIRouter, Path, status
 
 from .models.region import Region
 
-from src.common.entities.numbers_matched import NumbersMatched
-from .entities.prize_breakdown import PrizeBreakdown
-from .entities.numbers import Numbers
+from src.common.models.numbers_matched import NumbersMatched
+from .models.prize_breakdown import PrizeBreakdown
+from .models.numbers import Numbers
 
-from .lottomax_service import find_all_years, find_lotto_numbers_by_year, find_lotto_result
-from .lottomax_service import find_lotto_result_by_date_and_region
+from .lottomax_service import find_all_years, find_lotto_numbers_by_year, find_lotto_result, find_lotto_result_by_date_and_region
 
 router = APIRouter(
     prefix="/lottomax",

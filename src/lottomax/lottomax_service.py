@@ -1,238 +1,102 @@
-
-from datetime import date, datetime
+import datetime
+import traceback
 from typing import Final
+
 from fastapi import HTTPException
-from bs4 import BeautifulSoup, ResultSet
-import requests
-
+from sqlalchemy import Column
+from src.common.models.numbers_matched import NumbersMatched
+from src.games.game_repository import get_years_by_name, is_year_exist_by_name, save_new_year_by_name
+from src.notification.email_sender import email_sender
+from .entities.lotto_max_results import LottoMaxResults
+from .lottomax_repository import get_lotto_numbers_by_year, get_lotto_numbers_by_date, get_regions_numbers_matched_by_date, save_lotto_max_result
+from .models.numbers import Numbers
+from .models.prize_breakdown import PrizeBreakdown
 from .models.region import Region
+from .lottomax_factory import build_lotto_max_body_email, build_lotto_max_numbers, build_lotto_max_prize_breakdown, build_lotto_max_numbers_matched, build_lotto_max_result
+from .lottomax_external_data import extract_lotto_numbers_by_year, extract_lotto_result, extract_lotto_result_by_date_and_region
 
-from .entities.prize_breakdown import PrizeBreakdown
-from .entities.location import Location
-from src.common.entities.numbers_matched import NumbersMatched
-from .entities.summary import Summary
-from .entities.numbers import Numbers
-
-_LOTTOMAX_BASE_URL: Final[str] = "https://www.lottomaxnumbers.com"
+_GAME_NAME: Final[str] = "lottomax"
 
 def find_all_years() -> list[int]:
-    """Return all lotto max years played"""
-    return _get_lottomax_years()
+    """Find all years from lotto max"""
+    return get_years_by_name(_GAME_NAME)
 
 def find_lotto_numbers_by_year(year: int) -> list[Numbers]:
-    """Return result by selected years"""
-
-    results: ResultSet = _get_table_result_by_year(year)
-
-    return list(map(
-        lambda row: Numbers(
-            date=_format_date(row.a.text),
-            prize=row.find(class_="jackpot").text[1:].replace(",", ""),
-            numbers=_get_numbers(row.find_all(class_="ball")),
-            bonus=row.find(class_="bonus-ball").text
-        ),
-        results
-    ))
+    """Find lotto numbers by year"""
+    year_results: list[LottoMaxResults] = get_lotto_numbers_by_year(year)
+        
+    if len(year_results) == 0:
+        raise HTTPException(status_code=404, detail="The numbers for the year were not found")
+    
+    return build_lotto_max_numbers(year_results)
 
 def find_lotto_result(date: datetime.date) -> PrizeBreakdown:
-    """return the lottomax result within a specific date"""
-    html_content = _get_result_page_by_date(date)
+    """Find lotto result by date"""
+    lotto_max_result: LottoMaxResults = get_lotto_numbers_by_date(date)
 
-    div_summary: Final[list[ResultSet]] = [
-        div.find(class_="contentBox")
-        for div in html_content.find(class_="prizeStatsBox").find_all(class_="box")
-    ]
+    if lotto_max_result is None:
+         raise HTTPException(status_code=404, detail="The numbers for the date were not found")
 
-    table_content: Final[list[ResultSet]] = html_content.find(
-        class_="lottoMaxBox").tbody.find_all("tr")
+    return build_lotto_max_prize_breakdown(lotto_max_result)
 
-    numbers_matched: Final[list[NumbersMatched]] = _get_numbers_matched(table_content)
+def find_lotto_result_by_date_and_region(date: datetime.date, region: Region) -> list[NumbersMatched]:
+    """Find lotto result by date and region"""
+    number_matched: LottoMaxResults = _get_results_by_region_and_date(date, region)
 
-    total_prize_fund: Final[float] = _get_total_prize_fund(numbers_matched)
+    if number_matched is None:
+        raise HTTPException(status_code=404, detail="The numbers matched for the region and date were not found")
+    
+    return build_lotto_max_numbers_matched(number_matched)
 
-    summary: Final[Summary] = _get_stats_summary(div_summary, total_prize_fund)
+def insert_new_lotto_result(date: datetime.date) -> None:
+    """Insert new lotto result"""
+    try:
+        if get_lotto_numbers_by_date(date) is not None:
+            email_sender.notify("ERROR Lotto Max", f"The numbers for the date {date.strftime('%Y-%m-%d')} already exist")
+            return
 
-    return PrizeBreakdown(summary=summary, numbers_matched=numbers_matched)
+        year: Final[int] = date.year
+        external_number_result: Final[Numbers] = next(filter(lambda number: number.date == date, extract_lotto_numbers_by_year(year)), None)
+        external_result: Final[PrizeBreakdown] = extract_lotto_result(date)
 
-
-def find_lotto_result_by_date_and_region(
-    date: datetime.date,
-    region: Region) -> list[NumbersMatched]:
-    """Return the lotto result from specific date and region"""
-
-    region_class: Final[str] = _get_class_by_region(region)
-    html_content = _get_result_page_by_date(date)
-
-    table_content: Final[list[ResultSet]] = html_content.find(
-        class_=region_class).tbody.find_all("tr")
-
-    return _get_numbers_matched(table_content)
-
-def _get_result_page_by_date(date: datetime.date) -> ResultSet:
-    """Return the result website within a specific date"""
-    year: Final[int] = date.year
-
-    results: ResultSet = _get_table_result_by_year(year)
-
-    date_results: Final[list[date]] = list(map(
-        lambda row: _format_date(row.a.text),
-        results
-        ))
-
-    if date not in date_results:
-        raise HTTPException(
-            400,
-            f"The date {date} does not exist within the lotto max past result"
-        )
-
-    result_page: requests.Response = requests.get(
-        f"{_LOTTOMAX_BASE_URL}/numbers/lotto-max-result-{date.strftime('%m-%d-%Y')}"
-        ).text
-
-    return BeautifulSoup(result_page, "html.parser")
-
-def _get_class_by_region(region: Region) -> str:
-    if region not in Region:
-        raise HTTPException(
-            400,
-            f"The region {region} is invalid"
-        )
-
-    if region is Region.ATLANTIC:
-        return "atlanticBox"
-
-    if region is Region.BRITISH_COLUMBIA:
-        return "bcBox"
-
-    if region is Region.ONTARIO:
-        return "ontarioBox"
-
-    if region is Region.QUEBEC:
-        return "quebecBox"
-
-    if region is Region.WESTERN_CANADA:
-        return "westernBox"
-
-def _get_total_prize_fund(numbers_matched: list[NumbersMatched]) -> float:
-    numbers_with_prize_fund: Final[list[NumbersMatched]] = list(
-        filter(
-            lambda number_matched: number_matched.prize_fund is not None,
-            numbers_matched
-            ))
-
-    return round(sum(map(lambda x: x.prize_fund, numbers_with_prize_fund)), 2)
-
-def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[NumbersMatched]:
-    match_three: Final[str] = "Match 3"
-    free_play_ticket: Final[str] = "Free Play Ticket"
-
-    results: Final[list[NumbersMatched]] = []
-
-    if not numbers_matched_table:
-        return results
-
-    numbers_matched_table.pop()
-
-    tds: Final[list[ResultSet]] = list(map(lambda tr: tr.find_all("td"), numbers_matched_table))
-
-    for td_content in tds:
-        match: Final[str] = td_content[0].strong.text
-        prize_per_winner: Final[str | float] = free_play_ticket if match == match_three else float(td_content[1].text.strip().replace(",", "").replace("$", "")) 
-        total_winners: Final[int] = _get_number_winners(td_content[2])
+        if external_number_result is None:
+            email_sender.notify("ERROR Lotto Max numbers", f"The numbers for the date {date.strftime('%Y-%m-%d')} were not found")
+            return
+    
+        if external_result is None:
+            email_sender.notify("ERROR Lotto Max prize breakdown", f"The prize breakdown for the date {date.strftime('%Y-%m-%d')} were not found")
+            return
         
-        prize_fund: str | None = td_content[3].text.strip()
-        prize_fund = None if prize_fund == "-" else prize_fund.replace(",", "")[1:]
+        if not is_year_exist_by_name(_GAME_NAME, year):
+            save_new_year_by_name(_GAME_NAME, year)
+            email_sender.notify("New year added to Lotto Max" f"The year {year} was added to the database")
 
-        number_matched: Final[NumbersMatched] = NumbersMatched(match=match, prize_per_winner=prize_per_winner, total_winners=total_winners, prize_fund=prize_fund)
+        result_quebec: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.QUEBEC)
+        result_ontario: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.ONTARIO)
+        result_atlantic: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.ATLANTIC)
+        result_western_canada: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.WESTERN_CANADA)
+        result_british_columbia: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.BRITISH_COLUMBIA)
 
-        results.append(number_matched)
+        lotto_max_result: Final[LottoMaxResults] = build_lotto_max_result(external_number_result, external_result, result_quebec, result_ontario, result_atlantic, result_western_canada, result_british_columbia)
+        save_lotto_max_result(lotto_max_result)
 
-    return results
+        email_sender.notify("New Lotto Max result", build_lotto_max_body_email(lotto_max_result))
+    except Exception:
+        email_sender.notify("ERROR Lotto Max", f"An error occurred while inserting the lotto max result for the date {date.strftime('%Y-%m-%d')}.<br> Error: {traceback.format_exc().replace('\n', '<br>')}")
 
-def _get_number_winners(td_content: ResultSet) -> int:
-    total: int = 0
-    location: list[Location] = []
+def _get_results_by_region_and_date(date: datetime.date, region: Region) -> Column:
+    """Get results by region and date"""
+    regions_number_matched: LottoMaxResults = get_regions_numbers_matched_by_date(date)
 
-    if len(td_content.find_all(class_="regionWinners")) != 0:
-        region_winner: list[str] = list(map(
-            lambda div: div.find(class_="region").text,
-            td_content.find_all(class_="regionWinners")
-            ))
-
-        location.extend(list(map(
-            lambda region: _get_winner_location(region.split(": ")),
-            region_winner
-            )))
-
-        total = sum(map(lambda location: location.total, location))
-    elif td_content.find("span") is not None:
-        total = int(td_content.text.strip().replace(" ", "").split("-")[1])
+    if region == Region.ATLANTIC:
+        return regions_number_matched.numbers_matched_atlantic
+    elif region == Region.BRITISH_COLUMBIA:
+        return regions_number_matched.numbers_matched_british_columbia
+    elif region == Region.ONTARIO:
+        return regions_number_matched.numbers_matched_ontario
+    elif region == Region.QUEBEC:
+        return regions_number_matched.numbers_matched_quebec
+    elif region == Region.WESTERN_CANADA:
+        return regions_number_matched.numbers_matched_western_canada
     else:
-        total= int(td_content.text.strip().replace(",", ""))
-
-    return total
-
-def _get_winner_location(region: list[str]) -> Location:
-    return Location(region=region[0], total=region[1].replace(",", ""))
-
-def _get_stats_summary(summary_contents: list[ResultSet], total_prize_fund: float) -> Summary:
-    stat_class: str = "stat"
-
-    ticket_sold: str = summary_contents[0].find(class_=stat_class).text.replace(",", "")
-
-    if not ticket_sold:
-        ticket_sold = None
-
-    total_sales: str = summary_contents[0].find(class_="statSmall").text
-    total_sales = total_sales.split(": ")[1].replace(",", "")[1:]
-
-    if not total_sales:
-        total_sales = None
-
-    total_winners: str = summary_contents[1].find(class_=stat_class).text.replace(",", "")
-    winning_ratio: str  = summary_contents[2].find(class_=stat_class).text
-
-    sales_difference: str = summary_contents[3].find(class_=stat_class).text
-
-    return Summary(
-        ticket_sold=ticket_sold,
-        total_sales=total_sales,
-        total_winners=total_winners,
-        total_prize_fund=total_prize_fund,
-        winning_ratio=(int(winning_ratio.split(" ")[0]) / 100),
-        sales_difference_previous_draw=sales_difference
-    )
-
-def _get_table_result_by_year(year: int) -> ResultSet:
-    year_page: requests.Response = requests.get(f"{_LOTTOMAX_BASE_URL}/numbers/{year}").text
-    html_content = BeautifulSoup(year_page, "html.parser")
-
-    result_rows: ResultSet = html_content.find_all("tr")
-
-    for i, row in enumerate(result_rows):
-        if not row.find("ul", class_="balls"):
-            result_rows.pop(i)
-
-    return result_rows
-
-
-def _get_lottomax_years() -> list[int]:
-    """Return all lotto max years"""
-    year_past_page: requests.Response = requests.get(
-        f"{_LOTTOMAX_BASE_URL}/past-numbers").text
-    html_content = BeautifulSoup(year_past_page, "html.parser")
-
-    return list(map(
-        lambda a_tag: int(a_tag.text),
-        html_content.find(class_="yearList").find_all("a")
-    ))
-
-
-def _format_date(date_value: str) -> date:
-    """Map the date to MM-DD-YYYY"""
-    return datetime.strptime(date_value, "%B %d %Y").date()
-
-
-def _get_numbers(li_tags) -> list[int]:
-    """Extract the number results with the li tags"""
-    return list(map(lambda li: int(li.text), li_tags))
+        raise HTTPException(status_code=404, detail="The region was not found")
