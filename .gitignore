@@ -6,3 +6,4 @@ src/config/.env
 .env
 celerybeat-schedule
 testing.ipynb
+docker-compose.yml
