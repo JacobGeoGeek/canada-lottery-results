@@ -28,7 +28,6 @@ from src.daily_grand import daily_grand_external_data
 from src.games.entities.games import Games
 from src.lottomax.models.numbers import Numbers
 
-
 # revision identifiers, used by Alembic.
 revision: str = '6193c89488ba'
 down_revision: Union[str, None] = None
@@ -106,7 +105,6 @@ def _populate_lotto_max_table(id: int, years: list[int]) -> None:
       for result in number_results:
         print(f"Populating lottomax table for date {result.date}")
        
-        
         prize: LottomaxPrizeBreakdown = lottomax_external_data.extract_lotto_result(result.date)
         number_matched: list[str] = list(map(lambda match: match.model_dump_json(), prize.numbers_matched))
 
@@ -145,9 +143,11 @@ def _populate_lotto_max_table(id: int, years: list[int]) -> None:
 def _populate_daily_grand_table(id: int, years: list[int]) -> None:
     print("Populating daily grand table")
     insert_values = []
+
     for year in years:
      print(f"Populating daily grand table for year {year}")
      results: list[DailyGrandResult] = daily_grand_external_data.extract_daily_grand_results_by_years(year)
+
      for result in results:
         print(f"Populating daily grand table for date {result.date}")
         winners: PrizeBreakdown = daily_grand_external_data.extract_daily_grand_result_by_date(result.date)
@@ -164,13 +164,14 @@ def _populate_daily_grand_table(id: int, years: list[int]) -> None:
     
     op.bulk_insert(DailyGrandResults.__table__, insert_values)
 
-
 def _populate_six_fourty_nine_table(id: int, years: list[int]) -> None:
     print("Populating six fourty nine table")
     insert_values = []
+
     for year in years:
       print(f"Populating six fourty nine table for year {year}")
       results: list[SixFourtyNineResult] = six_fourty_nine_external_data.extract_649_results_by_year(year)
+
       for result in results:
         print(f"Populating six fourty nine table for date {result.date}")
         details: Final[SixFourtyNinePrizeBreakdown | None] = six_fourty_nine_external_data.extract_649_result_by_date(result.date)
@@ -186,8 +187,6 @@ def _populate_six_fourty_nine_table(id: int, years: list[int]) -> None:
 
     op.bulk_insert(SixFourtyNineResults.__table__, insert_values)
     
-    
-
 def _populate_tables() -> None:
     lotto_max_id: Final[int] = 1
     daily_grand_id: Final[int] = 2
@@ -204,7 +203,6 @@ def _populate_tables() -> None:
 def upgrade() -> None:
     _create_lottery_tables()
     _populate_tables()
-
 
 def downgrade() -> None:
     _drop_lottery_tables()
