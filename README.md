@@ -11,7 +11,9 @@ After installing Python, you must
 * Change the directory to canada-lottery-results `cd canada-lottery-results`
 * Create a virtual environnement (e.g: `python -m venv \path\to\virtual\environnement`).
 * Install the dependencies via the pip command: `pip install -r requirements.txt`.
-* Start the Celery scheduler by typing the following command: `celery -A src.celery_app worker -B --loglevel=info`
+* For the migrations, if you create a new migration script, you must run the following command: `alembic revision -m "SOME_TEXT_DESCRIPTION"`.
+* To apply the migrations, you must run the following command: `alembic -x url=SOME_DATABASE_CONNECTION_STRING upgrade head`.
+* To downgrade the migrations, you must run the following command: `alembic -x url=SOME_DATABASE_CONNECTION_STRING downgrade -1`.
 * Start the API by typing the following command: `python WORK_FOLDER/src/main.py`.
 
 
@@ -27,12 +29,12 @@ After installing Python, you must
 * **RECIPIENT_EMAIL**: The email recipient. this email will receive the lottery results saved in the database. Default value: `""`.
 * **SMTP_SERVER**: The SMTP server. Default value: `smtp.gmail.com`.
 * **SMTP_PORT**: The SMTP port. Default value: `587`.
-* **BROKER_URL**: The URL of the broker used by Celelry (e.g: RabbitMQ). Default value: `pyamqp://guest@localhost:5672//` 
 
 
 ## Stack
 This project uses the following libraries:
 * [FastAPI](https://fastapi.tiangolo.com/)
 * [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
-* [Celery](https://docs.celeryq.dev/en/stable/index.html)
 * [SQLAlchemy](https://www.sqlalchemy.org/)
+* [alembic](https://alembic.sqlalchemy.org/en/latest/)
+* [APScheduler](https://apscheduler.readthedocs.io/en/3.x/index.html)
