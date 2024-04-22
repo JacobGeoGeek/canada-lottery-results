@@ -220,4 +220,3 @@ def _format_prize_value(prize: str) -> float | None:
         return None
 
     return float(prize)
-
