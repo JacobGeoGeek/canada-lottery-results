@@ -11,7 +11,6 @@ class Configuration(BaseSettings):
     host: str = "0.0.0.0"
     rapidapi_proxy_secret: str = ""
     database_connection_string: str = ""
-    broker_url: str = "pyamqp://guest@localhost:5672//"
     sender_email: str = ""
     sender_password: str = ""
     recipient_email: str = ""
