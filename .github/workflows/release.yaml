@@ -23,6 +23,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract tag name
+        id: extract_tag
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
 
       - name: Build and push the Docker image to Docker Hub
         uses: docker/build-push-action@v5
@@ -31,4 +35,4 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: jacobchaar1/canada-lottery-api:${{ github.ref }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/canada-lottery-api:${{ steps.extract_tag.outputs.tag }}
