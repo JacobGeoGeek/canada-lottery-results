@@ -174,7 +174,7 @@ def _populate_six_fourty_nine_table(id: int, years: list[int]) -> None:
 
       for result in results:
         print(f"Populating six fourty nine table for date {result.date}")
-        details: Final[SixFourtyNinePrizeBreakdown | None] = six_fourty_nine_external_data.extract_649_result_by_date(result.date)
+        details: Final[SixFourtyNinePrizeBreakdown | None] = six_fourty_nine_external_data.extract_649_results_by_date(result.date)
         insert_values.append({
             "date": result.date,
             "game_id": id,
