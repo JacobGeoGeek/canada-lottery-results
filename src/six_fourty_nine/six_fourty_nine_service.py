@@ -50,7 +50,7 @@ def insert_new_649_result(date: datetime.date) -> None:
 
         year: Final[int] = date.year
         external_number_result: Final[Result] = next(filter(lambda number: number.date == date, extract_649_results_by_year(year)), None)
-        external_prize_breakdown: Final[PrizeBreakdown] = extract_649_results_by_date(date)
+        external_prize_breakdown: Final[PrizeBreakdown | None] = extract_649_results_by_date(date)
 
         if external_number_result is None:
             email_sender.notify("ERROR 6/49 numbers", f"The numbers for the date {date.strftime('%Y-%m-%d')} were not found.")
