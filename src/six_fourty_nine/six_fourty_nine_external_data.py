@@ -66,7 +66,7 @@ def extract_649_results_by_year(year: int) -> list[Result]:
 
     return classic_data["RESULT"].tolist()
 
-def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown:
+def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown | None:
     """Return the 6/49 result within a specific date"""
     date_string: Final[str] = date.strftime(_DATE_FORMAT)
     date_result_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date_string}")
@@ -78,7 +78,7 @@ def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown:
     table_breakdown_result: Final[ResultSet] = html_content.find("table")
 
     if table_breakdown_result is None:
-        raise Exception(f"The prize breakdown results for the date {date_string} is not available.")
+        return None
 
     tr_tags: Final[list[ResultSet]] = table_breakdown_result.tbody.find_all("tr")
     
