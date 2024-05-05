@@ -12,7 +12,8 @@ from .models.summary import Summary
 
 def build_lotto_max_numbers(data: list[LottoMaxResults]) -> list[Numbers]:
     """Build lotto max numbers"""
-    return list(map(lambda x: Numbers(date=x.date, prize=x.prize, numbers=x.numbers, bonus=x.bonus), data))
+    result: Final[list[Numbers]] = list(map(lambda x: Numbers(date=x.date, prize=x.prize, numbers=x.numbers, bonus=x.bonus), data))
+    return sorted(result, key=lambda x: x.date, reverse=True)
 
 def build_lotto_max_prize_breakdown(data: LottoMaxResults) -> PrizeBreakdown:
     """Build lotto max prize breakdown"""
