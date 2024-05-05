@@ -24,7 +24,7 @@ def build_daily_grand_results(data: list[DailyGrandResults]) -> list[Result]:
         
         results.append(Result(date=date, numbers=numbers, grandNumber=grand_number, prize=prize, bonusesDraw=bonuses_draw))
 
-    return results
+    return sorted(results, key=lambda x: x.date, reverse=True)
 
 def build_daily_grand_prize_breakdown(data: DailyGrandResults) -> PrizeBreakdown:
     """Build daily grand prize breakdown"""

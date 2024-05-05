@@ -34,7 +34,7 @@ def build_649_results(data: list[SixFourtyNineResults]) -> list[Result]:
 
     results.append(Result(date=date, classic=classic, guaranteed=guaranteed, goldBall=gold_ball))
 
-  return results
+  return sorted(results, key=lambda x: x.date, reverse=True)
 
 def build_649_prize_breakdown(data: SixFourtyNineResults) -> PrizeBreakdown:
     """Build 6/49 prize breakdown"""
