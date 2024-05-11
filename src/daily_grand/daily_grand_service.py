@@ -3,10 +3,11 @@ import traceback
 from typing import Final
 
 from fastapi import HTTPException
+from requests import Response
 from src.games.game_repository import get_years_by_name, is_year_exist_by_name, save_new_year_by_name
 from src.notification.email_sender import email_sender
 
-from .daily_grand_external_data import extract_daily_grand_result_by_date, extract_daily_grand_results_by_years
+from .daily_grand_external_data import extract_daily_grand_prize_breakdown, extract_daily_grand_result, fetch_daily_grand_result
 from .daily_grand_factory import build_daily_grand_body_email, build_daily_grand_new_result, build_daily_grand_prize_breakdown, build_daily_grand_results
 from .daily_grand_repository import get_daily_grand_numbers_by_date, get_daily_grand_numbers_by_year, save_daily_grand_result
 from .entities.daily_grand_results import DailyGrandResults
@@ -45,17 +46,11 @@ def insert_new_daily_grand_result(date: datetime.date) -> None:
             email_sender.notify("ERROR Daily Grand", f"The numbers for the date {date.strftime('%Y-%m-%d')} already exist")
             return
 
+        response_data: Response = fetch_daily_grand_result(date)
+        external_number_result: Final[Result] = extract_daily_grand_result(date, response_data)
+        external_prize_breakdown: Final[PrizeBreakdown] = extract_daily_grand_prize_breakdown(response_data)
+        
         year: Final[int] = date.year
-        external_number_result: Final[Result] = next(filter(lambda item: item.date == date, extract_daily_grand_results_by_years(year)), None)
-        external_prize_breakdown: Final[PrizeBreakdown] = extract_daily_grand_result_by_date(date)
-
-        if external_number_result is None:
-            email_sender.notify("ERROR Daily Grand", f"The numbers for the date {date.strftime('%Y-%m-%d')} was not found")
-            return
-
-        if  external_prize_breakdown is None:
-            email_sender.notify("ERROR Daily Grand", f"New prize breakdown for the date {date.strftime('%Y-%m-%d')} was not found")
-            return
 
         if not is_year_exist_by_name(_GAME_NAME, year):
             save_new_year_by_name(_GAME_NAME, year)
