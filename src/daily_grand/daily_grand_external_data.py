@@ -35,7 +35,7 @@ def extract_all_years() -> list[int]:
 
     return csv_file[draw_date_column].dt.year.unique().tolist()
 
-def extract_daily_grand_results_by_years(year: int) -> list[Result]:
+def extract_daily_grand_results(year: int) -> list[Result]:
     """Return results by selected years"""
     zip_file_response: Response = get(f"{_DAILY_GRAND_BASE_URL}{_RESULT_FILE_PATH}")
 
@@ -49,24 +49,37 @@ def extract_daily_grand_results_by_years(year: int) -> list[Result]:
     csv_file = csv_file[(csv_file["DRAW DATE"].dt.year == year) & (csv_file["PRIZE DIVISION"] == 0)]
     csv_file = csv_file.sort_values(by=["DRAW DATE"], ascending=False)
 
-    csv_file["JSON"] = csv_file.apply(lambda row: _build_result(row), axis=1)
+    csv_file["JSON"] = csv_file.apply(lambda row: _build_result_from_zip(row), axis=1)
 
     return csv_file["JSON"].tolist()
 
-def extract_daily_grand_result_by_date(date: datetime.date) -> PrizeBreakdown:
-    """Return the daily grand result within a specific date"""
+def fetch_daily_grand_result(date: datetime.date) -> Response:
     detail_page: Response = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date.strftime(_DATE_FORMAT)}")
 
     if detail_page.status_code != 200:
         raise Exception(f"The date {date} does not exist within the daily grand results \n message: {detail_page.text}")
     
-    game_breakdown: Final[list[dict]] = detail_page.json()["gameBreakdown"]
+    return detail_page
+
+def extract_daily_grand_result(date: datetime.date, response: Response) -> Result:
+    """Return the daily grand result from the response"""
+    result_data: Final[dict] = response.json()
+    numbers: Final[list[int]] = result_data["drawNbrs"]
+    grand_number: Final[int] = result_data["bonusNbr"]
+    prize: Final[float] = max(map(lambda breakdown: breakdown["prizeAmount"], result_data["gameBreakdown"]))
+    bonus_draw_details: Final[list[BonusDraw]] = _build_BonusDraw(result_data)
+    
+    return Result(date=date, numbers=numbers, grandNumber=grand_number, prize=prize, bonusesDraw=bonus_draw_details)
+
+def extract_daily_grand_prize_breakdown(response: Response) -> PrizeBreakdown:
+    """Return the daily grand prize breakdown from the response"""
+    game_breakdown: Final[list[dict]] = response.json()["gameBreakdown"]
     main_breakdown: Final[DetailBreakDown] = _build_main_breakdown(list(filter(lambda breakdown: breakdown["prizeDiv"] != 20, game_breakdown)))
     bonus_breakdown: Final[DetailBreakDown | None] = _build_bonus_breakdown(list(filter(lambda breakdown: breakdown["prizeDiv"] == 20, game_breakdown)))
 
     return PrizeBreakdown(mainBreakdown=main_breakdown, bonusesBreakdown=bonus_breakdown)
 
-def _build_result(row) -> Result:
+def _build_result_from_zip(row) -> Result:
     """Return the grand price for the selected date"""
     date: Final[str] = row["DRAW DATE"].strftime(_DATE_FORMAT)
     result_page: Final[Response] = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date}")
@@ -88,6 +101,10 @@ def _build_result(row) -> Result:
     bonuses_draw: list[BonusDraw] = list(map(lambda bonus: BonusDraw(numbers=bonus["drawNbrs"], prize=bonus["prizeAmount"]), result_payload["bonusDrawDetails"]))
 
     return Result(date=row["DRAW DATE"], numbers=numbers, grandNumber=grand_number, prize=prize, bonusesDraw=bonuses_draw)
+
+def _build_BonusDraw(bonus: dict) -> list[BonusDraw]:
+    """Return the bonus draw"""    
+    return list(map(lambda item: BonusDraw(numbers=item["drawNbrs"], prize=item["prizeAmount"]), bonus["bonusDrawDetails"]))
 
 def _build_main_breakdown(main_breakdown: list[dict]) -> DetailBreakDown:
     """Return the detail breakdown"""

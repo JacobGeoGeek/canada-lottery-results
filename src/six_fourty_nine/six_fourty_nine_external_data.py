@@ -21,6 +21,7 @@ _6_49_BASE_URL: Final[str] = "https://ca.lottonumbers.com"
 _6_49_PAGE: Final[str] = "/lotto-649"
 _6_49_CLASSIC_FILE_PATH_URL: Final[str] = "https://www.playnow.com/resources/documents/downloadable-numbers/649.zip"
 _6_49_GP_FILE_PATH_URL: Final[str] = "https://www.playnow.com/resources/documents/downloadable-numbers/649GPs.zip"
+_6_49_RESULT_API: Final[str] = "https://www.playnow.com/services2/lotto/draw/six49"
 
 _DRAW_DATE_FIELD: Final[str] = "DRAW DATE"
 _PRIZE_WON_FIELD: Final[str] = "PRIZE WON"
@@ -35,7 +36,7 @@ def extract_all_years() -> list[int]:
     """Return all 6/49 years played"""
     return _get_6_49_years()
 
-def extract_649_results_by_year(year: int) -> list[Result]:
+def extract_649_results(year: int) -> list[Result]:
     """Return results by selected years"""
     zip_file_classic_response: Response = get(_6_49_CLASSIC_FILE_PATH_URL)
     zip_file_gp_response: Response = get(_6_49_GP_FILE_PATH_URL)
@@ -58,15 +59,31 @@ def extract_649_results_by_year(year: int) -> list[Result]:
     csv_file_classic = csv_file_classic[csv_file_classic[_DRAW_DATE_FIELD].dt.year == year]
     csv_file_gp = csv_file_gp[csv_file_gp[_DRAW_DATE_FIELD].dt.year == year]
 
-    classic_data = _process_classic_results(csv_file_classic)
-    guaranteed_data = _process_guaranteed_data(csv_file_gp)
-    gold_ball_data = _process_gold_baell_data(csv_file_gp)
+    classic_data = _process_classic_results_from_zip(csv_file_classic)
+    guaranteed_data = _process_guaranteed_data_from_zip(csv_file_gp)
+    gold_ball_data = _process_gold_ball_data_from_zip(csv_file_gp)
 
     classic_data["RESULT"] = classic_data.apply(lambda row: _build_result(row, gold_ball_data, guaranteed_data), axis=1)
 
     return classic_data["RESULT"].tolist()
 
-def extract_649_results_by_date(date: datetime.date) -> PrizeBreakdown | None:
+def extract_649_result(date: datetime.date) -> Result:
+    """Return the 6/49 result within a specific date"""
+    date_string: Final[str] = date.strftime(_DATE_FORMAT)
+    result_page: Response = get(f"{_6_49_RESULT_API}/{date_string}")
+
+    if result_page.status_code != 200:
+        raise Exception(f"An error occured while fetching the results for the date {date_string}. \n message: {result_page.text}")
+
+    result_json: Final[dict] = result_page.json()
+
+    classic: Final[Classic] = _process_classic_results_from_json(result_json)
+    guaranteed: Final[list[Guaranteed] | None] =_process_guaranteed_data_from_json(result_json)
+    gold_ball: Final[GoldBall | None] = _process_gold_ball_from_json(result_json)
+
+    return Result(date=date, classic=classic, guaranteed=guaranteed, goldBall=gold_ball)
+
+def extract_649_prize_breakdown(date: datetime.date) -> PrizeBreakdown | None:
     """Return the 6/49 result within a specific date"""
     date_string: Final[str] = date.strftime(_DATE_FORMAT)
     date_result_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date_string}")
@@ -102,7 +119,58 @@ def _get_6_49_years() -> list[int]:
 
     return years
 
-def _process_classic_results(csv_file_classic: DataFrame) -> DataFrame:
+# API PAYLOAD PROCESSING
+def _process_classic_results_from_json(result: dict) -> Classic:
+    """Return the 6/49 classic results"""
+    numbers: Final[list[int]] = result["drawNbrs"]
+    bonus: Final[int] = result["bonusNbr"]
+
+    game_breakdown: Final[list[dict]] = result["gameBreakdown"]
+    prize: Final[float] = max(map(lambda breakdown: breakdown["prizeAmount"], game_breakdown))
+
+    return Classic(numbers=numbers, bonus=bonus, prize=prize)
+
+def _process_guaranteed_data_from_json(result: dict) -> list[Guaranteed] | None:
+    guarantted_data: Final[list[dict]] = result["gpAdditionalNumbers"]
+
+    if len(guarantted_data) == 0:
+        return None
+    
+    guaranteedByPrize: Final[dict] = {}
+
+    for guaranteed in guarantted_data:
+        prize: Final[float] = float(guaranteed["prizeDesc"].replace("$", "").replace(",", ""))
+        number: str = "".join(str(num) for num in guaranteed["drawNbrs"])
+        insert_index = len(number) - 2
+        number = number[:insert_index] + "-" + number[insert_index:]
+
+        if prize not in guaranteedByPrize:
+            guaranteedByPrize[prize] = [number]
+        else:
+            guaranteedByPrize[prize].append(number)
+
+    return list(map(lambda prize: Guaranteed(numbers=prize[1], prize=prize[0]), guaranteedByPrize.items()))
+
+def _process_gold_ball_from_json(result: dict) -> GoldBall | None:
+    gold_ball_data: Final[list[dict]] = result["gpNumbers"]
+
+    if len(gold_ball_data) == 0:
+        return None
+    
+    gold_ball: Final[dict] = gold_ball_data[0]
+
+    number: Final[str] = "".join(str(num) for num in gold_ball["drawNbrs"])
+    insert_index: Final[int] = len(number) - 2
+    number: Final[str] = number[:insert_index] + "-" + number[insert_index:]
+
+    is_gold_ball_drawn: Final[bool] = gold_ball["goldBallDrawn"]
+    prize: Final[float] = gold_ball["goldBallPrizeAmount"] if is_gold_ball_drawn else gold_ball["whiteBallPrizeAmount"]
+
+    return GoldBall(number=number, prize=prize, isGoldBallDrawn=is_gold_ball_drawn)
+
+
+# ZIP FILE PROCESSING
+def _process_classic_results_from_zip(csv_file_classic: DataFrame) -> DataFrame:
     number_columns: Final[list[str]] = ["NUMBER DRAWN 1", "NUMBER DRAWN 2", "NUMBER DRAWN 3", "NUMBER DRAWN 4", "NUMBER DRAWN 5", "NUMBER DRAWN 6"]
 
     csv_file_classic[_PRIZE_WON_FIELD] = csv_file_classic.apply(lambda row: _get_classic_prize(row), axis=1)
@@ -110,14 +178,14 @@ def _process_classic_results(csv_file_classic: DataFrame) -> DataFrame:
     
     return csv_file_classic.loc[:, [_DRAW_DATE_FIELD, _PRIZE_WON_FIELD, _NUMBERS_FIELDS, _BONUS_NUMBER_FIELD]]
 
-def _process_guaranteed_data(csv_file_gp: DataFrame) -> DataFrame:
+def _process_guaranteed_data_from_zip(csv_file_gp: DataFrame) -> DataFrame:
     csv_file_gp[_PRIZE_WON_FIELD] = csv_file_gp[_PRIZE_WON_FIELD].replace("[\$,]", "", regex=True).astype(float)
     csv_file_gp[_NUMBER_DRAWN_FIELD] = csv_file_gp[_NUMBER_DRAWN_FIELD].replace(" ", "", regex=True)
 
     guaranteed_data: DataFrame = csv_file_gp[csv_file_gp[_BALL_DRAWN_FIELD] == "Not Applicable"].groupby([_DRAW_DATE_FIELD, _PRIZE_WON_FIELD]).agg({_NUMBER_DRAWN_FIELD: _collect_number}).reset_index()
     return guaranteed_data.loc[:, [_DRAW_DATE_FIELD, _PRIZE_WON_FIELD, _NUMBER_DRAWN_FIELD]]
 
-def _process_gold_baell_data(csv_file_gp: DataFrame) -> DataFrame:
+def _process_gold_ball_data_from_zip(csv_file_gp: DataFrame) -> DataFrame:
     gold_ball_data: DataFrame = csv_file_gp[csv_file_gp[_BALL_DRAWN_FIELD] != "Not Applicable"]
     gold_ball_data.loc[:, [_IS_GOLD_BALL_DRAWN_FIELD]] = gold_ball_data[_BALL_DRAWN_FIELD] == "Gold"
     return gold_ball_data.loc[:, [_DRAW_DATE_FIELD, _PRIZE_WON_FIELD, _NUMBER_DRAWN_FIELD, _IS_GOLD_BALL_DRAWN_FIELD]]

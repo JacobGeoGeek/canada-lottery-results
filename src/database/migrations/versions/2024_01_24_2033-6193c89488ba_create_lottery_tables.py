@@ -8,6 +8,7 @@ Create Date: 2024-01-24 20:33:35.646800
 from typing import Final, Sequence, Union
 
 from alembic import op
+from requests import Response
 import sqlalchemy as sa
 from src.common.models.numbers_matched import NumbersMatched
 from src.daily_grand.entities.daily_grand_results import DailyGrandResults
@@ -146,11 +147,12 @@ def _populate_daily_grand_table(id: int, years: list[int]) -> None:
 
     for year in years:
      print(f"Populating daily grand table for year {year}")
-     results: list[DailyGrandResult] = daily_grand_external_data.extract_daily_grand_results_by_years(year)
+     results: list[DailyGrandResult] = daily_grand_external_data.extract_daily_grand_results(year)
 
      for result in results:
         print(f"Populating daily grand table for date {result.date}")
-        winners: PrizeBreakdown = daily_grand_external_data.extract_daily_grand_result_by_date(result.date)
+        response_data: Final[Response] = daily_grand_external_data.fetch_daily_grand_result(result.date)
+        winners: PrizeBreakdown = daily_grand_external_data.extract_daily_grand_prize_breakdown(response_data)
         insert_values.append({
             "date": result.date,
             "game_id": id,
@@ -170,11 +172,11 @@ def _populate_six_fourty_nine_table(id: int, years: list[int]) -> None:
 
     for year in years:
       print(f"Populating six fourty nine table for year {year}")
-      results: list[SixFourtyNineResult] = six_fourty_nine_external_data.extract_649_results_by_year(year)
+      results: list[SixFourtyNineResult] = six_fourty_nine_external_data.extract_649_results(year)
 
       for result in results:
         print(f"Populating six fourty nine table for date {result.date}")
-        details: Final[SixFourtyNinePrizeBreakdown | None] = six_fourty_nine_external_data.extract_649_results_by_date(result.date)
+        details: Final[SixFourtyNinePrizeBreakdown | None] = six_fourty_nine_external_data.extract_649_prize_breakdown(result.date)
         insert_values.append({
             "date": result.date,
             "game_id": id,

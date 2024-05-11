@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from src.notification.email_sender import email_sender
 
-from .six_fourty_nine_external_data import extract_649_results_by_date, extract_649_results_by_year
+from .six_fourty_nine_external_data import extract_649_prize_breakdown, extract_649_result
 from .six_fourty_nine_factory import build_649_body_email, build_649_new_result, build_649_prize_breakdown, build_649_results
 
 from .entities.six_fourty_nine_results import SixFourtyNineResults
@@ -48,9 +48,8 @@ def insert_new_649_result(date: datetime.date) -> None:
          email_sender.notify("ERROR 6/49", f"The numbers for the date {date.strftime('%Y-%m-%d')} already exist.")
          return
 
-        year: Final[int] = date.year
-        external_number_result: Final[Result] = next(filter(lambda number: number.date == date, extract_649_results_by_year(year)), None)
-        external_prize_breakdown: Final[PrizeBreakdown | None] = extract_649_results_by_date(date)
+        external_number_result: Final[Result] = extract_649_result(date)
+        external_prize_breakdown: Final[PrizeBreakdown | None] = extract_649_prize_breakdown(date)
 
         if external_number_result is None:
             email_sender.notify("ERROR 6/49 numbers", f"The numbers for the date {date.strftime('%Y-%m-%d')} were not found.")
@@ -59,6 +58,8 @@ def insert_new_649_result(date: datetime.date) -> None:
         if external_prize_breakdown is None:
             email_sender.notify("ERROR 6/49 prize breakdown", f"The prize breakdown for the date {date.strftime('%Y-%m-%d')} were not found.")
             return
+
+        year: Final[int] = date.year
 
         if not is_year_exist_by_name(_GAME_NAME, year):
             save_new_year_by_name(_GAME_NAME, year)
