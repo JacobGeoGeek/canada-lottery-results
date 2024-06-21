@@ -88,6 +88,9 @@ def _get_results_by_region_and_date(date: datetime.date, region: Region) -> Colu
     """Get results by region and date"""
     regions_number_matched: LottoMaxResults = get_regions_numbers_matched_by_date(date)
 
+    if regions_number_matched is None:
+        raise HTTPException(status_code=400, detail=f"The numbers matched for the date {date.strftime('%Y-%m-%d')} were not found")
+
     if region == Region.ATLANTIC:
         return regions_number_matched.numbers_matched_atlantic
     elif region == Region.BRITISH_COLUMBIA:
