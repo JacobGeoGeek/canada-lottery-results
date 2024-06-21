@@ -13,7 +13,7 @@ from .lottomax_service import find_all_years, find_lotto_numbers_by_year, find_l
 router = APIRouter(
     prefix="/lottomax",
     tags=["lottomax"],
-    responses={404: {"description": "Not Found"}, 500: {"description": "Internal server error"}}
+    responses={400: {"description": "Bad Request"}, 404: {"description": "Not Found"}, 500: {"description": "Internal server error"}}
 )
 
 _LOTTOMAX_YEARS: Final[list[int]] = find_all_years()
