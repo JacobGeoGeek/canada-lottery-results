@@ -26,7 +26,7 @@ def find_daily_grand_results_by_year(year: int) -> list[Result]:
     result: Final[list[DailyGrandResults]] = get_daily_grand_numbers_by_year(year)
 
     if len(result) == 0:
-      raise HTTPException(status_code=404, detail="Year not found")
+      raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the year {year}")
 
     return build_daily_grand_results(result)
 
@@ -35,7 +35,7 @@ def find_daily_grand_result_by_date(date: datetime.date) -> PrizeBreakdown:
     result: Final[DailyGrandResults] = get_daily_grand_numbers_by_date(date)
 
     if result is None:
-      raise HTTPException(status_code=404, detail="Date not found")
+      raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the date {date.strftime('%Y-%m-%d')}. The Daily Grand numbers are drawn on Monday and Thursday evenings.")
     
     return build_daily_grand_prize_breakdown(result)
 

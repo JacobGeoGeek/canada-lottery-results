@@ -26,7 +26,7 @@ def find_lotto_numbers_by_year(year: int) -> list[Numbers]:
     year_results: list[LottoMaxResults] = get_lotto_numbers_by_year(year)
         
     if len(year_results) == 0:
-        raise HTTPException(status_code=404, detail="The numbers for the year were not found")
+        raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the year {year}")
     
     return build_lotto_max_numbers(year_results)
 
@@ -35,7 +35,7 @@ def find_lotto_result(date: datetime.date) -> PrizeBreakdown:
     lotto_max_result: LottoMaxResults = get_lotto_numbers_by_date(date)
 
     if lotto_max_result is None:
-         raise HTTPException(status_code=404, detail="The numbers for the date were not found")
+         raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the date {date.strftime('%Y-%m-%d')}. The Lotto Max number are drawn on Tuesday and Friday evenings.")
 
     return build_lotto_max_prize_breakdown(lotto_max_result)
 
@@ -44,7 +44,7 @@ def find_lotto_result_by_date_and_region(date: datetime.date, region: Region) ->
     number_matched: LottoMaxResults = _get_results_by_region_and_date(date, region)
 
     if number_matched is None:
-        raise HTTPException(status_code=404, detail="The numbers matched for the region and date were not found")
+        raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the date {date.strftime('%Y-%m-%d')} and region {region.name}. The Lotto Max number are drawn on Tuesday and Friday evenings.")
     
     return build_lotto_max_numbers_matched(number_matched)
 
@@ -89,7 +89,7 @@ def _get_results_by_region_and_date(date: datetime.date, region: Region) -> Colu
     regions_number_matched: LottoMaxResults = get_regions_numbers_matched_by_date(date)
 
     if regions_number_matched is None:
-        raise HTTPException(status_code=400, detail=f"The numbers matched for the date {date.strftime('%Y-%m-%d')} were not found")
+        return None
 
     if region == Region.ATLANTIC:
         return regions_number_matched.numbers_matched_atlantic
@@ -102,4 +102,4 @@ def _get_results_by_region_and_date(date: datetime.date, region: Region) -> Colu
     elif region == Region.WESTERN_CANADA:
         return regions_number_matched.numbers_matched_western_canada
     else:
-        raise HTTPException(status_code=404, detail="The region was not found")
+        raise HTTPException(status_code=400, detail=f"The region {region.name} is not valid.")
