@@ -28,7 +28,7 @@ def find_649_numbers_by_year(year: int) -> list[Result]:
     year_results: list[SixFourtyNineResults] = get_649_numbers_by_year(year)
 
     if len(year_results) == 0:
-        raise HTTPException(status_code=404, detail="The numbers for the year were not found")
+        raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the year {year}")
     
     return build_649_results(year_results)
 
@@ -37,7 +37,7 @@ def find_649_by_date(date: datetime.date) -> PrizeBreakdown:
     result: SixFourtyNineResults = get_649_numbers_by_date(date)
 
     if result is None:
-        raise HTTPException(status_code=404, detail="The numbers for the date were not found")
+        raise HTTPException(status_code=400, detail=f"No lottery numbers were found for the date {date.strftime('%Y-%m-%d')}. The 6/49 numbers are drawn on Wednesday and Saturday evenings.")
     
     return build_649_prize_breakdown(result)
 
