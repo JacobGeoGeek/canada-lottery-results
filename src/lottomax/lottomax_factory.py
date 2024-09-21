@@ -1,4 +1,3 @@
-from json import loads, dumps
 from typing import Final
 from sqlalchemy import Column
 
@@ -34,8 +33,8 @@ def build_lotto_max_result(number: Numbers, prize_breakdown: PrizeBreakdown, que
         numbers=number.numbers,
         bonus=number.bonus,
         prize=number.prize,
-        summary=prize_breakdown.summary.model_dump_json(),
-        numbers_matched=list(map(lambda x: x.model_dump_json(), prize_breakdown.numbers_matched)),
+        summary=prize_breakdown.summary.model_dump(mode="json"),
+        numbers_matched=list(map(lambda x: x.model_dump(mode="json"), prize_breakdown.numbers_matched)),
         numbers_matched_quebec=_build_region_json(quebec),
         numbers_matched_ontario=_build_region_json(ontario),
         numbers_matched_atlantic=_build_region_json(atlantic),
@@ -45,7 +44,6 @@ def build_lotto_max_result(number: Numbers, prize_breakdown: PrizeBreakdown, que
 
 def build_lotto_max_body_email(data: LottoMaxResults) -> str:
     """Build lotto max body email"""
-    indent_json: Final[int] = 4
     return f"""
     <h1>Lotto Max Result</h1>
     <p>Date: {data.date}</p>
@@ -53,36 +51,29 @@ def build_lotto_max_body_email(data: LottoMaxResults) -> str:
     <p>Bonus: {data.bonus}</p>
     <p>Prize: {data.prize}</p>
     <p>Summary:</p>
-    <pre>{dumps(data.summary, indent=indent_json)}</pre>
+    <pre>{data.summary}</pre>
     <p>Numbers Matched:</p>
-    <pre>{dumps(data.numbers_matched, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched}</pre>
     <p>Numbers Matched Quebec:</p>
-    <pre>{dumps(data.numbers_matched_quebec, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched_quebec}</pre>
     <p>Numbers Matched Ontario:</p>
-    <pre>{dumps(data.numbers_matched_ontario, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched_ontario}</pre>
     <p>Numbers Matched Atlantic:</p>
-    <pre>{dumps(data.numbers_matched_atlantic, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched_atlantic}</pre>
     <p>Numbers Matched Western Canada:</p>
-    <pre>{dumps(data.numbers_matched_western_canada, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched_western_canada}</pre>
     <p>Numbers Matched British Columbia:</p>
-    <pre>{dumps(data.numbers_matched_british_columbia, indent=indent_json)}</pre>
+    <pre>{data.numbers_matched_british_columbia}</pre>
     """
 
 def _build_summary(summary: Column) -> Summary:
     """Build summary"""
-    summary_dict: Final[dict] = loads(summary)
-    return Summary(**summary_dict)
+    return Summary(**summary)
 
 def _build_match_numbers(numbers_matched: Column) -> list[NumbersMatched]:
     """Build match numbers"""
-    result: Final[list[NumbersMatched]] = []
-    
-    for value in numbers_matched:
-        match_dict = loads(value)
-        result.append(NumbersMatched(**match_dict))
+    return list(map(lambda x: NumbersMatched(**x), numbers_matched))
 
-    return result
-
-def _build_region_json(data: list[NumbersMatched]) -> list[str]:
+def _build_region_json(data: list[NumbersMatched]) -> str:
     """Build region dict"""
-    return list(map(lambda x: x.model_dump_json(), data))
+    return list(map(lambda x: x.model_dump(mode="json"), data))
