@@ -62,16 +62,43 @@ def upgrade() -> None:
                 WHERE date = :date
             """),
                 {
-                    "summary": json.dumps(prize.summary.model_dump(mode="json")),
-                    "numbers_matched": json.dumps(number_matched),
-                    "numbers_matched_atlantic": json.dumps(detail_result_atlantic),
-                    "numbers_matched_british_columbia": json.dumps(detail_result_british),
-                    "numbers_matched_ontario": json.dumps(detail_result_ontario),
-                    "numbers_matched_quebec": json.dumps(detail_result_quebec),
-                    "numbers_matched_western_canada": json.dumps(detail_result_western),
+                    "summary": json.dumpss(prize.summary.model_dump(mode="json")),
+                    "numbers_matched": json.dumpss(number_matched),
+                    "numbers_matched_atlantic": json.dumpss(detail_result_atlantic),
+                    "numbers_matched_british_columbia": json.dumpss(detail_result_british),
+                    "numbers_matched_ontario": json.dumpss(detail_result_ontario),
+                    "numbers_matched_quebec": json.dumpss(detail_result_quebec),
+                    "numbers_matched_western_canada": json.dumpss(detail_result_western),
                     "date": row.date
                 }
             )
 
 def downgrade() -> None:
-    pass
+   connection: sa.Connection = op.get_bind()
+   results: Sequence[sa.Row] = connection.execute(sa.text("SELECT date, summary, numbers_matched, numbers_matched_atlantic, numbers_matched_british_columbia, numbers_matched_ontario, numbers_matched_quebec, numbers_matched_western_canada FROM lotto_max_draw_results")).fetchall()
+
+   for row in results:
+       print(f"downgrading total winners for {row.date}")
+       connection.execute(
+              sa.text("""
+                UPDATE lotto_max_draw_results
+                SET summary = :summary,
+                     numbers_matched = :numbers_matched,
+                     numbers_matched_atlantic = :numbers_matched_atlantic,
+                     numbers_matched_british_columbia = :numbers_matched_british_columbia,
+                     numbers_matched_ontario = :numbers_matched_ontario,
+                     numbers_matched_quebec = :numbers_matched_quebec,
+                     numbers_matched_western_canada = :numbers_matched_western_canada
+                WHERE date = :date
+              """),
+                {
+                     "summary": json.dumps(row.summary),
+                     "numbers_matched": json.dumps(row.numbers_matched),
+                     "numbers_matched_atlantic": json.dumps(row.numbers_matched_atlantic),
+                     "numbers_matched_british_columbia": json.dumps(row.numbers_matched_british_columbia),
+                     "numbers_matched_ontario": json.dumps(row.numbers_matched_ontario),
+                     "numbers_matched_quebec": json.dumps(row.numbers_matched_quebec),
+                     "numbers_matched_western_canada": json.dumps(row.numbers_matched_western_canada),
+                     "date": row.date
+                }
+              )
