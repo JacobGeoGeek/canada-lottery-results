@@ -7,7 +7,7 @@ APScheduler==3.10.4
 asttokens==2.4.1
 beautifulsoup4==4.12.3
 billiard==4.2.0
-certifi==2024.7.4
+certifi==2024.2.2
 charset-normalizer==3.3.2
 click==8.1.7
 click-didyoumean==0.3.0
@@ -67,7 +67,7 @@ stack-data==0.6.3
 starlette==0.37.2
 toolz==0.12.1
 tornado==6.4.1
-tqdm==4.66.3
+tqdm==4.66.2
 traitlets==5.14.1
 typing_extensions==4.10.0
 tzdata==2024.1
@@ -79,4 +79,4 @@ vine==5.1.0
 watchfiles==0.21.0
 wcwidth==0.2.13
 websockets==12.0
-zipp==3.17.0
+zipp==3.20.2

@@ -48,7 +48,7 @@ def find_lotto_result_by_date_and_region(date: datetime.date, region: Region) ->
     
     return build_lotto_max_numbers_matched(number_matched)
 
-def insert_new_lotto_result(date: datetime.date) -> None:
+def insert_new_lotto_max_result(date: datetime.date) -> None:
     """Insert new lotto result"""
     try:
         if get_lotto_numbers_by_date(date) is not None:

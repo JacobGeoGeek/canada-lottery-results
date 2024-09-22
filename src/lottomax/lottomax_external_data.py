@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup, ResultSet
 from .models.region import Region
 from .models.prize_breakdown import PrizeBreakdown
 from .models.summary import Summary
-from .models.location import Location
 from .models.numbers import Numbers
 
 from src.common.models.numbers_matched import NumbersMatched
@@ -130,7 +129,7 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
     for td_content in tds:
         match: Final[str] = td_content[0].strong.text
         prize_per_winner: Final[str | float] = free_play_ticket if match == match_three else float(td_content[1].text.strip().replace(",", "").replace("$", "")) 
-        total_winners: Final[int] = _get_number_winners(td_content[2])
+        total_winners: Final[int] = _get_total_winners(td_content[2])
         
         prize_fund: str | None = td_content[3].text.strip()
         prize_fund = None if prize_fund == "-" else prize_fund.replace(",", "")[1:]
@@ -141,31 +140,15 @@ def _get_numbers_matched(numbers_matched_table: list[ResultSet]) -> list[Numbers
 
     return results
 
-def _get_number_winners(td_content: ResultSet) -> int:
-    total: int = 0
-    location: list[Location] = []
+def _get_total_winners(td_content: ResultSet) -> int:
+    for span in td_content.find_all('span'):
+        span.decompose()
 
-    if len(td_content.find_all(class_="regionWinners")) != 0:
-        region_winner: list[str] = list(map(
-            lambda div: div.find(class_="region").text,
-            td_content.find_all(class_="regionWinners")
-            ))
+    main_value = td_content.get_text(strip=True).replace(",", "")
 
-        location.extend(list(map(
-            lambda region: _get_winner_location(region.split(": ")),
-            region_winner
-            )))
+    number = ''.join(filter(str.isdigit, main_value))
+    return int(number)
 
-        total = sum(map(lambda location: location.total, location))
-    elif td_content.find("span") is not None:
-        total = int(td_content.text.strip().replace(" ", "").split("-")[1])
-    else:
-        total= int(td_content.text.strip().replace(",", ""))
-
-    return total
-
-def _get_winner_location(region: list[str]) -> Location:
-    return Location(region=region[0], total=region[1].replace(",", ""))
 
 def _get_stats_summary(summary_contents: list[ResultSet], total_prize_fund: float) -> Summary:
     stat_class: str = "stat"
