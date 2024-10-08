@@ -1,15 +1,15 @@
 FROM python:3.12-alpine
 
-# Install build dependencies
-RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
-
-
 WORKDIR /app
 
 COPY __init__.py /app/__init__.py
 COPY ./requirements.txt /app/requirements.txt
 COPY alembic.ini /app/alembic.ini
 COPY entrypoint.sh /app/entrypoint.sh
+
+# Install build dependencies
+RUN apk update && apk add bash
+RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
 
 RUN chmod +x /app/entrypoint.sh
 RUN pip install --upgrade pip
