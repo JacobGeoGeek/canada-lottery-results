@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup, ResultSet
 import re
 from pandas import DataFrame, read_csv, to_datetime
 from requests import Response, get
+from fake_useragent import UserAgent
 
 from src.common.models.numbers_matched import NumbersMatched
 from src.common.models.summary import Summary
@@ -31,6 +32,7 @@ _IS_GOLD_BALL_DRAWN_FIELD: Final[str] = "IS GOLD BALL DRAWN"
 _BONUS_NUMBER_FIELD: Final[str] = "BONUS NUMBER"
 _NUMBERS_FIELDS: Final[str] = "NUMBERS"
 _DATE_FORMAT: Final[str] = "%Y-%m-%d"
+_USER_AGENT: Final[UserAgent] = UserAgent()
 
 def extract_all_years() -> list[int]:
     """Return all 6/49 years played"""
@@ -70,7 +72,8 @@ def extract_649_results(year: int) -> list[Result]:
 def extract_649_result(date: datetime.date) -> Result:
     """Return the 6/49 result within a specific date"""
     date_string: Final[str] = date.strftime(_DATE_FORMAT)
-    result_page: Response = get(f"{_6_49_RESULT_API}/{date_string}")
+
+    result_page: Response = get(f"{_6_49_RESULT_API}/{date_string}", headers={"User-Agent": _USER_AGENT.chrome})
 
     if result_page.status_code != 200:
         raise Exception(f"An error occured while fetching the results for the date {date_string}. \n message: {result_page.text}")

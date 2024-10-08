@@ -4,7 +4,7 @@ from requests import get, Response
 from zipfile import ZipFile
 from io import BytesIO
 from pandas import read_csv, DataFrame, to_datetime
-
+from fake_useragent import UserAgent
 from src.common.models.numbers_matched import NumbersMatched
 from src.common.models.summary import Summary
 
@@ -17,6 +17,8 @@ _DAILY_GRAND_BASE_URL: Final[str] = "https://www.playnow.com"
 _RESULT_FILE_PATH: Final[str] = "/resources/documents/downloadable-numbers/DailyGrand.zip"
 _FILE_NAME: Final[str] = "DailyGrand.csv"
 _DATE_FORMAT: Final[str] = "%Y-%m-%d"
+
+_USER_AGENT: Final[UserAgent] = UserAgent()
 
 _PRIZE_TYPE_ANNUITY: Final[str] = "annuity"
 
@@ -54,7 +56,7 @@ def extract_daily_grand_results(year: int) -> list[Result]:
     return csv_file["JSON"].tolist()
 
 def fetch_daily_grand_result(date: datetime.date) -> Response:
-    detail_page: Response = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date.strftime(_DATE_FORMAT)}")
+    detail_page: Response = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date.strftime(_DATE_FORMAT)}", headers={"User-Agent": _USER_AGENT.chrome})
 
     if detail_page.status_code != 200:
         raise Exception(f"The date {date} does not exist within the daily grand results \n message: {detail_page.text}")
@@ -82,7 +84,7 @@ def extract_daily_grand_prize_breakdown(response: Response) -> PrizeBreakdown:
 def _build_result_from_zip(row) -> Result:
     """Return the grand price for the selected date"""
     date: Final[str] = row["DRAW DATE"].strftime(_DATE_FORMAT)
-    result_page: Final[Response] = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date}")
+    result_page: Final[Response] = get(f"{_DAILY_GRAND_BASE_URL}/services2/lotto/draw/dgrd/{date}", headers={"User-Agent": _USER_AGENT.chrome})
 
     if result_page.status_code != 200:
         raise Exception(f"An error occured while fetching the results for the date {date} \n message: {result_page.text}")
