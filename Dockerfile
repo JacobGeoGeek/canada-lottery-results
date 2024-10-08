@@ -1,4 +1,8 @@
-FROM python:3.12-slim
+FROM python:3.12-alpine
+
+# Install build dependencies
+RUN apk add --no-cache gcc python3-dev musl-dev linux-headers
+
 
 WORKDIR /app
 
