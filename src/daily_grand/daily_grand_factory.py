@@ -6,7 +6,7 @@ from sqlalchemy import Column
 
 from .entities.daily_grand_results import DailyGrandResults
 
-from .models.detail_breakdown import DetailBreakDown
+from src.common.models.detail_breakdown import DetailBreakDown
 from .models.result import Result
 from .models.bonus_draw import BonusDraw
 from .models.prize_breakdown import PrizeBreakdown

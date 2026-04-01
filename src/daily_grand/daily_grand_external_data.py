@@ -7,9 +7,9 @@ from pandas import read_csv, DataFrame, to_datetime
 from fake_useragent import UserAgent
 from src.common.models.numbers_matched import NumbersMatched
 from src.common.models.summary import Summary
+from src.common.models.detail_breakdown import DetailBreakDown
 
 from .models.prize_breakdown import PrizeBreakdown
-from .models.detail_breakdown import DetailBreakDown
 from .models.bonus_draw import BonusDraw
 from .models.result import Result
 
