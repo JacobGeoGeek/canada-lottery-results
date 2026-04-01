@@ -89,9 +89,11 @@ def extract_649_result(date: datetime.date) -> Result:
 def extract_649_prize_breakdown(date: datetime.date) -> PrizeBreakdown | None:
     """Return the 6/49 result within a specific date"""
     date_string: Final[str] = date.strftime(_DATE_FORMAT)
+    print(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date_string}")
     date_result_page: Response = get(f"{_6_49_BASE_URL}{_6_49_PAGE}/numbers/{date_string}")
 
     if date_result_page.status_code != 200:
+        print(f"An error occured while fetching the results for the date {date_string}. \n message: {date_result_page.text}")
         raise Exception(f"An error occured while fetching the results for the date {date_string}. \n message: {date_result_page.text}")
     
     html_content: BeautifulSoup = BeautifulSoup(date_result_page.text, "html.parser")
