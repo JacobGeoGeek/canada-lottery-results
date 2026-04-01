@@ -70,7 +70,7 @@ def _get_result_page_by_date(date: datetime.date) -> ResultSet:
 
     results: ResultSet = _get_table_result_by_year(year)
 
-    date_results: Final[list[date]] = list(map(
+    date_results: Final[list[datetime.date]] = list(map(
         lambda row: _format_date(row.a.text),
         results
         ))
@@ -148,7 +148,6 @@ def _get_total_winners(td_content: ResultSet) -> int:
 
     number = ''.join(filter(str.isdigit, main_value))
     return int(number)
-
 
 def _get_stats_summary(summary_contents: list[ResultSet], total_prize_fund: float) -> Summary:
     stat_class: str = "stat"

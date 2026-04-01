@@ -4,6 +4,7 @@ from typing import Final
 
 from fastapi import HTTPException
 from sqlalchemy import Column
+from src.common.factory.email import build_new_year_email
 from src.common.models.numbers_matched import NumbersMatched
 from src.games.game_repository import get_years_by_name, is_year_exist_by_name, save_new_year_by_name
 from src.notification.email_sender import email_sender
@@ -69,7 +70,7 @@ def insert_new_lotto_max_result(date: datetime.date) -> None:
         
         if not is_year_exist_by_name(_GAME_NAME, year):
             save_new_year_by_name(_GAME_NAME, year)
-            email_sender.notify("New year added to Lotto Max" f"The year {year} was added to the database")
+            email_sender.notify("New year added to Lotto Max" f"The year {year} was added to the database", build_new_year_email(year))
 
         result_quebec: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.QUEBEC)
         result_ontario: Final[list[NumbersMatched]] = extract_lotto_result_by_date_and_region(date, Region.ONTARIO)
